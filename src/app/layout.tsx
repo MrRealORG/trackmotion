@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Loader } from "@/components/site/Loader";
@@ -79,6 +80,9 @@ export const metadata: Metadata = {
     },
   },
   appleWebApp: { capable: true, title: "CenterFace", statusBarStyle: "black-translucent" },
+  verification: {
+    google: "googlee3fcceff88e9c4dc",
+  },
 };
 
 export const viewport: Viewport = {
@@ -146,6 +150,21 @@ const LOADER_GATE = `try{document.documentElement.classList.add(sessionStorage.g
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${geist.variable} ${geistMono.variable}`} suppressHydrationWarning>
+      <head>
+        <Script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-XLW898F83R"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-XLW898F83R');
+          `}
+        </Script>
+      </head>
       <body className="min-h-dvh bg-black font-sans text-white antialiased">
         <script dangerouslySetInnerHTML={{ __html: LOADER_GATE }} />
         <noscript>
