@@ -15,6 +15,8 @@ import {
   addDoc,
   deleteDoc,
   doc,
+  setDoc,
+  increment,
   query,
   orderBy,
   onSnapshot,
@@ -195,3 +197,134 @@ export async function savePreview(preview: { title: string; dataUrl: string }) {
 export async function removePreview(id: string) {
   return await deleteDoc(doc(db, "previews", id));
 }
+
+// ─────────────────────────────────────────────── EXPORTS TELEMETRY ──
+export interface RealtimeExport {
+  id: string;
+  name: string;
+  resolution: string;
+  duration?: number | null;
+  bytes?: number | null;
+  createdAt: number;
+}
+
+export async function recordExport(exportData: {
+  name: string;
+  resolution: string;
+  duration?: number | null;
+  bytes?: number | null;
+}) {
+  try {
+    // 1. Add record to 'exports' collection
+    await addDoc(collection(db, "exports"), {
+      ...exportData,
+      createdAt: serverTimestamp(),
+    });
+
+    // 2. Increment global total exports counter in 'stats/overview'
+    const statsDocRef = doc(db, "stats", "overview");
+    await setDoc(
+      statsDocRef,
+      {
+        totalExports: increment(1),
+        lastExportAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+  } catch (err) {
+    console.warn("Firestore recordExport error:", err);
+  }
+}
+
+export function subscribeToExports(callback: (exports: RealtimeExport[]) => void) {
+  try {
+    const q = query(collection(db, "exports"), orderBy("createdAt", "desc"));
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const items = snapshot.docs.map((d) => {
+          const data = d.data() as DocumentData;
+          return {
+            id: d.id,
+            name: data.name || "Untitled Export",
+            resolution: data.resolution || "1080p",
+            duration: data.duration ?? null,
+            bytes: data.bytes ?? null,
+            createdAt: data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now(),
+          };
+        });
+        callback(items);
+      },
+      (error) => {
+        console.warn("Firestore subscribeToExports warning:", error);
+      }
+    );
+  } catch (err) {
+    console.warn("Firestore subscribeToExports error:", err);
+    return () => {};
+  }
+}
+
+export function subscribeToStats(
+  callback: (stats: { totalExports: number; totalEdits: number; activeUsers: number }) => void
+) {
+  try {
+    const docRef = doc(db, "stats", "overview");
+    return onSnapshot(
+      docRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          callback({
+            totalExports: data.totalExports || 0,
+            totalEdits: data.totalEdits || 0,
+            activeUsers: data.activeUsers || 0,
+          });
+        } else {
+          callback({ totalExports: 0, totalEdits: 0, activeUsers: 0 });
+        }
+      },
+      (err) => {
+        console.warn("Firestore stats error:", err);
+      }
+    );
+  } catch (err) {
+    console.warn("Firestore stats subscribe error:", err);
+    return () => {};
+  }
+}
+
+// ─────────────────────────── CLOUDFLARE GUARD & R2 STORAGE ──
+export const CF_GUARD_URL = "https://centerface-guard.bbs-hub-cdn.workers.dev";
+
+export async function verifySubmissionWithGuard(data: { honeypot?: string; comment?: string }) {
+  try {
+    const res = await fetch(`${CF_GUARD_URL}/api/guard/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    return (await res.json()) as { ok: boolean; error?: string; message?: string };
+  } catch {
+    // If worker is unreachable, fail-open gracefully for human users
+    return { ok: true };
+  }
+}
+
+export async function uploadToR2(file: File, adminKey = "centerface2026") {
+  const res = await fetch(`${CF_GUARD_URL}/api/r2/upload`, {
+    method: "POST",
+    headers: {
+      "Content-Type": file.type || "application/octet-stream",
+      "X-Filename": file.name,
+      "X-Admin-Key": adminKey,
+    },
+    body: file,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "R2 upload failed" }));
+    throw new Error(err.error || "Failed to upload to Cloudflare R2");
+  }
+  return (await res.json()) as { ok: boolean; key: string; url: string; size: number };
+}
+

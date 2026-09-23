@@ -6,6 +6,7 @@ import { exportProject, type ExportQuality, type ExportResult } from "@/lib/trac
 import { outputSize } from "@/lib/tracking/player";
 import { Seg, Toggle } from "./ui";
 import { ExportReady } from "./ExportReady";
+import { recordExport } from "@/lib/firebase";
 
 type Res = "720" | "1080" | "source";
 
@@ -55,20 +56,13 @@ export default function ExportModal() {
       });
       setResult({ ...out, url: URL.createObjectURL(out.blob) });
       setShowAd(true);
-      // Log the render so the admin console has a real record of output.
-      void fetch("/api/exports", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: `${video.name.replace(/\.[^.]+$/, "")} — ${r}p.mp4`,
-          resolution: r,
-          width: size.w,
-          height: size.h,
-          frames: video.frameCount,
-          duration: video.duration,
-          bytes: out.blob.size,
-        }),
-      }).catch(() => {});
+      // Log the render in Cloud Firestore in real time
+      void recordExport({
+        name: `${video.name.replace(/\.[^.]+$/, "")} — ${r}p.${out.ext}`,
+        resolution: `${r}p`,
+        duration: video.duration,
+        bytes: out.blob.size,
+      });
     } catch (e) {
       if (!ctl.signal.aborted) setError(e instanceof Error ? e.message : String(e));
     } finally {

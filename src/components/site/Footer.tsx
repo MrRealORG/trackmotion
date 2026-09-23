@@ -39,7 +39,6 @@ const COLS: { title: string; links: [string, string][] }[] = [
       ["/about", "About"],
       ["/about#faq", "FAQ"],
       ["/about#contact", "Contact"],
-      ["/admin", "Admin"],
     ],
   },
 ];

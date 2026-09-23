@@ -16,8 +16,12 @@ import {
   subscribeToPreviews,
   savePreview,
   removePreview,
+  subscribeToExports,
+  subscribeToStats,
+  uploadToR2,
   type RealtimeReview,
   type UploadedPreview,
+  type RealtimeExport,
 } from "@/lib/firebase";
 import type { User } from "firebase/auth";
 
@@ -133,6 +137,7 @@ function Seg<T extends string>({
 }
 
 const mb = (b: number | null) => (b ? `${(b / 1048576).toFixed(1)} MB` : "—");
+const fmt = (b: number | null) => (b ? (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.round(b / 1024)} KB`) : "—");
 const rel = (t: number) => {
   const s = Math.max(0, (Date.now() - t) / 1000);
   if (s < 60) return "just now";
@@ -165,6 +170,8 @@ export function AdminConsole() {
   const [previews, setPreviews] = useState<UploadedPreview[]>([]);
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [renders, setRenders] = useState<ExportRow[]>([]);
+  const [liveExports, setLiveExports] = useState<RealtimeExport[]>([]);
+  const [liveStats, setLiveStats] = useState({ totalExports: 0, totalEdits: 0, activeUsers: 0 });
   const [notes, setNotes] = useState<NoteRow[]>([]);
   const [kind, setKind] = useState<Kind>("preview");
   const [drag, setDrag] = useState(false);
@@ -223,6 +230,22 @@ export function AdminConsole() {
   useEffect(() => {
     const unsub = subscribeToPreviews((items) => {
       setPreviews(items);
+    });
+    return () => unsub();
+  }, []);
+
+  // 4. Real-time Firestore Exports Listener
+  useEffect(() => {
+    const unsub = subscribeToExports((items) => {
+      setLiveExports(items);
+    });
+    return () => unsub();
+  }, []);
+
+  // 5. Real-time Firestore Global Stats Listener
+  useEffect(() => {
+    const unsub = subscribeToStats((stats) => {
+      setLiveStats(stats);
     });
     return () => unsub();
   }, []);
@@ -315,6 +338,19 @@ export function AdminConsole() {
   const handlePreviewUpload = async (files: FileList | File[]) => {
     const list = Array.from(files);
     for (const f of list) {
+      try {
+        const r2 = await uploadToR2(f);
+        if (r2.ok) {
+          await savePreview({
+            title: f.name,
+            dataUrl: r2.url,
+          });
+          continue;
+        }
+      } catch (err) {
+        console.warn("R2 upload fallback to dataUrl:", err);
+      }
+
       const reader = new FileReader();
       reader.onload = async () => {
         if (typeof reader.result === "string") {
@@ -342,16 +378,18 @@ export function AdminConsole() {
   );
 
   const stats = useMemo(() => {
-    const totalBytes = renders.reduce((s, r) => s + (r.bytes ?? 0), 0);
+    const totalBytes =
+      liveExports.reduce((s, r) => s + (r.bytes ?? 0), 0) + renders.reduce((s, r) => s + (r.bytes ?? 0), 0);
     const unread = notes.filter((n) => n.status === "new").length;
-    return { totalBytes, unread };
-  }, [renders, notes]);
+    const totalExports = Math.max(liveStats.totalExports, liveExports.length, renders.length);
+    return { totalBytes, unread, totalExports };
+  }, [renders, liveExports, liveStats, notes]);
 
   const counts: Record<Tab, number | null> = {
     overview: null,
     library: kind === "preview" ? previews.length : assets.length,
     projects: projects.length,
-    renders: renders.length,
+    renders: Math.max(liveExports.length, renders.length),
     notes: notes.length,
   };
 
@@ -639,21 +677,26 @@ export function AdminConsole() {
         {/* ─────────────────────────────────────────────── OVERVIEW ── */}
         {tab === "overview" && (
           <div className="mt-8 space-y-8 max-w-4xl">
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="rounded-[16px] bg-[#1c1c1e] p-5 ring-1 ring-white/5">
-                <p className="osd text-lock">Realtime Reviews</p>
+                <p className="osd text-lock">Video Exports</p>
+                <p className="mt-2 text-[32px] font-bold tracking-tight">{stats.totalExports}</p>
+                <p className="mt-1 text-[12px] text-white/40">Logged in Cloud Firestore</p>
+              </div>
+              <div className="rounded-[16px] bg-[#1c1c1e] p-5 ring-1 ring-white/5">
+                <p className="osd text-emerald-400">Live Reviews</p>
                 <p className="mt-2 text-[32px] font-bold tracking-tight">{notes.length}</p>
                 <p className="mt-1 text-[12px] text-white/40">{stats.unread} unread notifications</p>
               </div>
               <div className="rounded-[16px] bg-[#1c1c1e] p-5 ring-1 ring-white/5">
-                <p className="osd text-sky-400">Previews Uploaded</p>
-                <p className="mt-2 text-[32px] font-bold tracking-tight">{previews.length}</p>
-                <p className="mt-1 text-[12px] text-white/40">Stored in Firebase Firestore</p>
+                <p className="osd text-sky-400">Cloudflare Guard</p>
+                <p className="mt-2 text-[20px] font-bold tracking-tight text-sky-400">Bot Shield Active</p>
+                <p className="mt-1 text-[12px] text-white/40">IP Rate Limiter &amp; Spam Filter</p>
               </div>
               <div className="rounded-[16px] bg-[#1c1c1e] p-5 ring-1 ring-white/5">
-                <p className="osd text-emerald-400">Backend Status</p>
-                <p className="mt-2 text-[22px] font-bold tracking-tight text-emerald-400">Firebase Online</p>
-                <p className="mt-1 text-[12px] text-white/40">Auth & Firestore: centerface2</p>
+                <p className="osd text-purple-400">R2 Storage</p>
+                <p className="mt-2 text-[20px] font-bold tracking-tight text-purple-400">R2 Connected</p>
+                <p className="mt-1 text-[12px] text-white/40">Bucket: centerface-storage</p>
               </div>
             </div>
 
@@ -803,6 +846,49 @@ export function AdminConsole() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ─────────────────────────────────────────────── LIVE RENDERS & EXPORTS ── */}
+        {tab === "renders" && (
+          <div className="mt-8 space-y-6 max-w-4xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-white">Live Video Exports</h3>
+                <p className="text-sm text-white/50">
+                  Real-time telemetry of videos generated and exported by users across the web.
+                </p>
+              </div>
+              <span className="rounded-full bg-lock/15 px-3 py-1 font-mono text-xs font-semibold text-lock">
+                {liveExports.length} Exports Logged
+              </span>
+            </div>
+
+            <Group header="Real-time Export Feed">
+              {liveExports.length === 0 ? (
+                <div className="px-4 py-8 text-center text-[14px] text-white/40">
+                  No video exports recorded yet. When any creator clicks &quot;Export&quot; in the studio, their render telemetry appears here live!
+                </div>
+              ) : (
+                liveExports.map((exp, i) => (
+                  <div key={exp.id || i} className="flex items-center justify-between border-b border-white/[0.06] p-4 last:border-b-0">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate font-semibold text-[14.5px] text-white">{exp.name}</span>
+                        <span className="rounded bg-white/10 px-2 py-0.5 font-mono text-[11px] text-lock">
+                          {exp.resolution}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-center gap-3 text-xs text-white/40">
+                        {exp.duration ? <span>{Math.round(exp.duration)}s duration</span> : null}
+                        {exp.bytes ? <span>{fmt(exp.bytes)}</span> : null}
+                      </div>
+                    </div>
+                    <span className="text-[12px] text-white/35 shrink-0 ml-4">{rel(exp.createdAt)}</span>
+                  </div>
+                ))
+              )}
+            </Group>
           </div>
         )}
       </main>

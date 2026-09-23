@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { addReview } from "@/lib/firebase";
+import { addReview, verifySubmissionWithGuard } from "@/lib/firebase";
 
 /** iOS inset-grouped form with real-time Firebase Firestore review & feedback. */
 export function NoteForm() {
-  const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
+  const [state, setState] = useState<"idle" | "busy" | "done" | "error" | "rate_limited">("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [rating, setRating] = useState<number>(5);
 
   async function send(e: React.FormEvent<HTMLFormElement>) {
@@ -15,12 +16,30 @@ export function NoteForm() {
     const name = String(data.get("name") || "").trim();
     const email = String(data.get("email") || "").trim();
     const message = String(data.get("message") || "").trim();
+    const honeypot = String(data.get("_hp") || "").trim();
 
     if (!name || !email || !message) return;
 
+    // 1. Client honeypot check
+    if (honeypot.length > 0) {
+      setState("error");
+      setErrorMessage("Automated submission blocked.");
+      return;
+    }
+
     setState("busy");
+    setErrorMessage(null);
+
+    // 2. Cloudflare Guard Bot Detection & IP Rate Limiter
+    const guard = await verifySubmissionWithGuard({ honeypot, comment: message });
+    if (!guard.ok) {
+      setState("rate_limited");
+      setErrorMessage(guard.error || "Rate limit exceeded. Please wait a few minutes before submitting.");
+      return;
+    }
+
     try {
-      // 1. Submit directly to Firebase Firestore
+      // 3. Submit directly to Cloud Firestore
       await addReview({
         name,
         email,
@@ -33,18 +52,8 @@ export function NoteForm() {
       setRating(5);
     } catch (err) {
       console.warn("Firestore submission note:", err);
-      // Fallback to API if offline or firestore rules not yet enabled
-      try {
-        await fetch("/api/feedback", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, message }),
-        });
-        setState("done");
-        form.reset();
-      } catch {
-        setState("error");
-      }
+      setState("error");
+      setErrorMessage("Unable to save review. Please check your internet connection.");
     }
   }
 
@@ -105,18 +114,29 @@ export function NoteForm() {
             className="w-full resize-none bg-transparent text-[15px] leading-[1.6] text-white placeholder:text-white/30 outline-none focus-visible:outline-none"
           />
         </label>
+
+        {/* Hidden Honeypot field for bot detection */}
+        <input
+          type="text"
+          name="_hp"
+          tabIndex={-1}
+          autoComplete="off"
+          style={{ position: "absolute", left: "-9999px", opacity: 0 }}
+        />
       </div>
       <p className="px-4 text-[12.5px] text-white/35">
-        Synced live with Firebase Firestore. Your review and email update real-time in the admin console.
+        Protected by Cloudflare Guard bot detection &amp; synced live to Firebase Firestore.
       </p>
 
       <div className="flex flex-wrap items-center gap-4">
         <button type="submit" disabled={state === "busy"} className="btn-lock disabled:opacity-50">
-          {state === "busy" ? "Sending to Firebase…" : "Submit Review"}
+          {state === "busy" ? "Verifying & Sending…" : "Submit Review"}
         </button>
         <span role="status" aria-live="polite" className="text-[14px]">
           {state === "done" && <span className="text-lock">Received in real-time — thank you!</span>}
-          {state === "error" && <span className="text-rec">Could not submit. Please try again.</span>}
+          {(state === "error" || state === "rate_limited") && (
+            <span className="text-red-400">{errorMessage || "Could not submit. Please try again."}</span>
+          )}
         </span>
       </div>
     </form>

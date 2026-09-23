@@ -18,7 +18,6 @@ const RAIL = [
   { href: "/", label: "Index" },
   { href: "/app", label: "Studio" },
   { href: "/about", label: "About" },
-  { href: "/admin", label: "Admin" },
 ];
 
 function Spinner() {
