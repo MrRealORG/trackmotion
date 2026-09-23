@@ -5,10 +5,10 @@ import { MEDIA } from "@/lib/media";
 import { Corners, Cover, Lock, PixelShades, TrackPath } from "@/components/site/Viewfinder";
 import { ScrollVar, Timecode, WordReveal } from "@/components/site/Motion";
 import { ScrollReframe } from "@/components/site/ScrollReframe";
-import { Icon, type IconName } from "@/components/tracking/Icons";
+import { HomeReviews } from "@/components/site/HomeReviews";
 
 export const metadata: Metadata = {
-  title: { absolute: "CenterFace AI — Motion Tracking & Face Lock in Your Browser" },
+  title: { absolute: "CenterFace AI — Free Online Face Lock & Motion Tracking (No Watermark)" },
   description:
     "Click anything in a video and CenterFace AI follows it through every frame. Face lock, nose lock, point tracking, virtual camera moves and auto-reframe to 9:16 — frame-exact MP4 with audio, no upload, no signup.",
   alternates: { canonical: "/" },
@@ -16,26 +16,6 @@ export const metadata: Metadata = {
 
 type Vars = CSSProperties & Record<`--${string}`, string | number>;
 const d = (ms: number): Vars => ({ "--d": `${ms}ms` });
-
-const TRAY: [IconName, string][] = [
-  ["thugGlasses", "Shades"],
-  ["goldChain", "Chain"],
-  ["thugHat", "Cap"],
-  ["crown2", "Crown"],
-  ["money", "Money"],
-  ["grill", "Grill"],
-  ["flame2", "Flame"],
-  ["skull2", "Skull"],
-  ["hundred", "100"],
-  ["bolt", "Bolt"],
-  ["star", "Star"],
-  ["heart", "Heart"],
-  ["sparkle", "Sparkle"],
-  ["bandana", "Bandana"],
-  ["goldTooth", "Gold tooth"],
-  ["crown", "Royal"],
-  ["fire", "Fire"],
-];
 
 const SPECS: { title: string; rows: [string, string][] }[] = [
   {
@@ -373,50 +353,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ─────────────────────────────────────────── overlay tray ── */}
-      <section className="border-y border-white/10 bg-[#0a0a0b]" aria-labelledby="tray-title">
-        <div className="mx-auto max-w-[1280px] px-6 py-24 sm:px-10 sm:py-28">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="rv osd text-white/40">04 — The overlay tray</p>
-              <h2 id="tray-title" className="h-title mt-5 text-[clamp(2.2rem,4.8vw,3.8rem)]">
-                <span className="mask-line">
-                  <span>
-                    Vector overlays. <span className="text-white/40">Plus yours.</span>
-                  </span>
-                </span>
-              </h2>
-            </div>
-            <p className="rv max-w-sm text-[15px] leading-relaxed text-white/55">
-              Every overlay in the studio is vector, so it stays sharp at any export size. Upload your own PNGs in the
-              admin library and they show up here too.
-            </p>
-          </div>
-
-          <ul className="mt-12 grid grid-cols-3 gap-3 sm:grid-cols-6 lg:grid-cols-9">
-            {TRAY.map(([name, label], i) => (
-              <li key={name} className="rv" style={d(i * 30)}>
-                <div className="grid aspect-square place-items-center rounded-[22px] bg-[#1c1c1e] text-white transition-colors duration-300 hover:bg-[#2c2c2e] hover:text-lock">
-                  <Icon name={name} size={34} />
-                </div>
-                <p className="mt-2 text-center text-[11.5px] text-white/45">{label}</p>
-              </li>
-            ))}
-            <li className="rv" style={d(TRAY.length * 30)}>
-              <Link
-                href="/admin"
-                aria-label="Upload your own overlay in the admin library"
-                className="grid aspect-square place-items-center rounded-[22px] border border-dashed border-white/20 text-white/50 transition-colors duration-300 hover:border-lock hover:text-lock"
-              >
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                </svg>
-              </Link>
-              <p className="mt-2 text-center text-[11.5px] text-white/45">Your PNG</p>
-            </li>
-          </ul>
-        </div>
-      </section>
+      {/* ─────────────────────────────────────────── reviews ── */}
+      <HomeReviews />
 
       {/* ───────────────────────────────────────── specifications ── */}
       <section id="specs" className="mx-auto max-w-[1280px] px-6 py-28 sm:px-10 sm:py-40">

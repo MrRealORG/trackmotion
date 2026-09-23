@@ -39,16 +39,44 @@ export const db = getFirestore(app);
 // Authentication Helpers
 const googleProvider = new GoogleAuthProvider();
 
+export function formatAuthError(err: unknown): string {
+  if (typeof err === "object" && err !== null && "code" in err) {
+    const code = (err as { code: string }).code;
+    if (code === "auth/configuration-not-found") {
+      return "Firebase Authentication requires 1-click activation in console: Go to https://console.firebase.google.com/project/centerface2/authentication and click 'Get started' to enable Google / Email sign-in.";
+    }
+    if (code === "auth/popup-closed-by-user") {
+      return "Sign-in popup was closed before completing.";
+    }
+    if (code === "auth/invalid-credential" || code === "auth/user-not-found" || code === "auth/wrong-password") {
+      return "Invalid email or password.";
+    }
+  }
+  return err instanceof Error ? err.message : "Authentication error";
+}
+
 export async function loginWithGoogle() {
-  return await signInWithPopup(auth, googleProvider);
+  try {
+    return await signInWithPopup(auth, googleProvider);
+  } catch (err) {
+    throw new Error(formatAuthError(err));
+  }
 }
 
 export async function loginWithEmail(email: string, pass: string) {
-  return await signInWithEmailAndPassword(auth, email, pass);
+  try {
+    return await signInWithEmailAndPassword(auth, email, pass);
+  } catch (err) {
+    throw new Error(formatAuthError(err));
+  }
 }
 
 export async function registerWithEmail(email: string, pass: string) {
-  return await createUserWithEmailAndPassword(auth, email, pass);
+  try {
+    return await createUserWithEmailAndPassword(auth, email, pass);
+  } catch (err) {
+    throw new Error(formatAuthError(err));
+  }
 }
 
 export async function logoutUser() {
