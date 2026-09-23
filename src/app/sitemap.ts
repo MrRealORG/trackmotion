@@ -33,5 +33,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.85,
     },
+    {
+      url: `${SITE_URL}/face-lock-effect`,
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.9,
+      images: [`${SITE_URL}/opengraph-image`],
+    },
   ];
 }

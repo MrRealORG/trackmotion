@@ -14,7 +14,7 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "CenterFace AI — Motion Tracking & Face Lock in Your Browser",
+    default: "CenterFace AI — Free Online Face Lock & Motion Tracking (No Watermark)",
     template: "%s · CenterFace AI",
   },
   description: DESCRIPTION,
@@ -23,10 +23,16 @@ export const metadata: Metadata = {
     "centerface ai",
     "center face",
     "centerface.web.app",
+    "face lock effect",
+    "face lock video editor",
+    "how to do face lock in after effects",
+    "tracket motion alternative",
+    "tracket motion video editor online",
+    "free face track app",
+    "lock on effect tiktok",
+    "nose lock video edit",
     "motion tracking video editor",
     "ai motion tracking online",
-    "face lock video editor",
-    "nose lock edit",
     "point tracking online free",
     "object tracking video online",
     "auto reframe 9:16",
@@ -49,7 +55,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: SITE_URL,
     siteName: "CenterFace AI",
-    title: "CenterFace AI — Lock onto anything in your browser",
+    title: "CenterFace AI — Free Online Face Lock & Motion Tracking (No Watermark)",
     description:
       "Face lock, nose lock and point tracking in your browser. Stick anything to real motion and export frame-exact MP4. 100% private, nothing uploaded.",
     images: [
@@ -63,7 +69,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "CenterFace AI — Lock onto anything",
+    title: "CenterFace AI — Free Online Face Lock & Motion Tracking",
     description: "Point tracking, face lock, virtual camera and auto-reframe. In your browser. Nothing uploaded.",
     images: [`${SITE_URL}/opengraph-image`],
   },
@@ -140,6 +146,52 @@ const jsonLd = {
       url: SITE_URL,
       inLanguage: "en",
       publisher: { "@id": `${SITE_URL}/#org` },
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${SITE_URL}/#faq`,
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "How do you do the viral face lock effect online for free?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Open CenterFace AI in your browser, drop your video, click the nose or face anchor on the first frame, and click Track. CenterFace automatically reframes every frame to keep the face locked in the center without any software installation.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Is CenterFace AI free with no watermark?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Yes, CenterFace AI is 100% free with no watermarks, no account signup, and no subscription fees. You can export high-quality MP4 videos with audio intact.",
+          },
+        },
+        {
+          "@type": "Question",
+          "name": "What is the best web alternative to Tracket Motion: Video Editor?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "CenterFace AI is the top web-based alternative to Tracket Motion: Video Editor. While Tracket Motion is a mobile app with in-app ads, CenterFace AI runs directly on PC, Mac, Chromebook, and mobile browsers with zero downloads, zero ads, and 100% private local processing.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "How to edit face lock video without Adobe After Effects?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Adobe After Effects requires complex motion tracking keyframing, null objects, and expensive monthly subscriptions. CenterFace AI automates the entire process in your browser in 10 seconds using AI optical flow.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Does my video get uploaded to any server?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "No. Video decoding, AI tracking, compositing, and MP4 encoding run 100% client-side in your browser. Your videos never leave your device.",
+          },
+        },
+      ],
     },
   ],
 };

@@ -2,13 +2,17 @@ import Link from "next/link";
 import { Mark } from "./Mark";
 
 const TERMS = [
+  "face lock effect",
   "motion tracking video editor",
   "ai motion tracking",
+  "tracket motion alternative",
+  "after effects face lock",
   "face lock",
   "nose lock",
   "point tracking",
   "object tracking",
   "auto reframe 9:16",
+  "free face track app",
   "sticker tracking",
   "virtual camera",
   "speed ramp",
@@ -23,6 +27,7 @@ const COLS: { title: string; links: [string, string][] }[] = [
     title: "Product",
     links: [
       ["/app", "Studio"],
+      ["/face-lock-effect", "Face Lock Effect (Free)"],
       ["/#virtual-camera", "Virtual camera"],
       ["/#features", "Features"],
       ["/#specs", "Specifications"],

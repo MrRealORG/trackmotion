@@ -9,12 +9,12 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/home", "/app", "/about", "/opengraph-image", "/icon.svg"],
+        allow: ["/", "/home", "/app", "/about", "/face-lock-effect", "/opengraph-image", "/icon.svg"],
         disallow: ["/admin", "/api/"],
       },
       {
         userAgent: "Googlebot",
-        allow: ["/", "/home", "/app", "/about"],
+        allow: ["/", "/home", "/app", "/about", "/face-lock-effect"],
         disallow: ["/admin", "/api/"],
       },
     ],
