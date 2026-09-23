@@ -8,7 +8,7 @@ import { NoteForm } from "@/components/site/NoteForm";
 export const metadata: Metadata = {
   title: "About — how browser motion tracking works",
   description:
-    "How TrackWeb Motion tracks motion inside a browser tab: pyramidal Lucas–Kanade optical flow with forward–backward checks, RANSAC similarity fits, MediaPipe face mesh and a smoothing path solver — all on-device, nothing uploaded.",
+    "How CenterFace AI tracks motion inside a browser tab: pyramidal Lucas–Kanade optical flow with forward–backward checks, RANSAC similarity fits, MediaPipe face mesh and a smoothing path solver — all on-device, nothing uploaded.",
   alternates: { canonical: "/about" },
   keywords: [
     "how motion tracking works",
@@ -16,9 +16,10 @@ export const metadata: Metadata = {
     "RANSAC similarity transform",
     "MediaPipe face mesh",
     "on-device video processing",
+    "centerface ai",
   ],
   openGraph: {
-    title: "About TrackWeb Motion — a tracker that never asks for your file",
+    title: "About CenterFace AI — a tracker that never asks for your file",
     description:
       "Optical flow, robust estimation and a path solver, running entirely in your browser tab. Here's how it works.",
     url: "/about",
@@ -78,7 +79,7 @@ export default function AboutPage() {
 
       {/* ───────────────────────────────────────────────────── hero ── */}
       <section className="mx-auto max-w-[1280px] px-6 pt-36 sm:px-10 sm:pt-44">
-        <p className="rv osd text-lock">About TrackWeb Motion</p>
+        <p className="rv osd text-lock">About CenterFace AI</p>
         <h1 className="h-display mt-6 text-[clamp(2.9rem,7.2vw,6.6rem)]">
           <span className="mask-line">
             <span>A tracker that never</span>
@@ -88,7 +89,7 @@ export default function AboutPage() {
           </span>
         </h1>
         <p className="rv mt-8 max-w-xl text-[17px] leading-[1.6] text-white/60" style={d(220)}>
-          TrackWeb Motion is a motion-tracking studio built as a single web page. It uses the same machinery as a
+          CenterFace AI is a motion-tracking studio built as a single web page. It uses the same machinery as a
           desktop compositor — optical flow, robust estimation, a path solver — and runs all of it in the tab you
           already have open.
         </p>

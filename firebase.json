@@ -1,13 +1,14 @@
 {
+  "firestore": {
+    "rules": "firestore.rules"
+  },
   "hosting": {
+    "site": "centerface",
     "source": ".",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
-    ],
-    "frameworksBackend": {
-      "region": "us-central1"
-    }
+    ]
   }
 }

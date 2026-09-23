@@ -6,18 +6,22 @@ import { Loader } from "@/components/site/Loader";
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "swap" });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trackmotion.web.app";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://centerface.web.app";
 const DESCRIPTION =
-  "Click anything in a video and TrackWeb Motion follows it through every frame. Face lock, nose lock, point tracking, a virtual camera and auto-reframe to 9:16 — exported as frame-exact MP4 with audio. Runs in your browser: no upload, no signup.";
+  "Click anything in a video and CenterFace AI follows it through every frame. Face lock, nose lock, point tracking, a virtual camera and auto-reframe to 9:16 — exported as frame-exact MP4 with audio. Runs in your browser: no upload, no signup.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "TrackWeb Motion — Motion Tracking & Face Lock in Your Browser",
-    template: "%s · TrackWeb Motion",
+    default: "CenterFace AI — Motion Tracking & Face Lock in Your Browser",
+    template: "%s · CenterFace AI",
   },
   description: DESCRIPTION,
   keywords: [
+    "centerface",
+    "centerface ai",
+    "center face",
+    "centerface.web.app",
     "motion tracking video editor",
     "ai motion tracking online",
     "face lock video editor",
@@ -31,12 +35,11 @@ export const metadata: Metadata = {
     "after effects alternative browser",
     "private video editor no upload",
     "in browser motion tracking",
-    "trackmotion",
   ],
-  applicationName: "TrackWeb Motion",
-  authors: [{ name: "MrReal / TrackWeb Motion", url: SITE_URL }],
+  applicationName: "CenterFace AI",
+  authors: [{ name: "MrReal / CenterFace AI", url: SITE_URL }],
   creator: "MrReal",
-  publisher: "TrackWeb Motion",
+  publisher: "CenterFace AI",
   category: "Multimedia Video Production",
   alternates: { canonical: "/" },
   formatDetection: { telephone: false, email: false, address: false },
@@ -44,8 +47,8 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: SITE_URL,
-    siteName: "TrackWeb Motion",
-    title: "TrackWeb Motion — Lock onto anything in your browser",
+    siteName: "CenterFace AI",
+    title: "CenterFace AI — Lock onto anything in your browser",
     description:
       "Face lock, nose lock and point tracking in your browser. Stick anything to real motion and export frame-exact MP4. 100% private, nothing uploaded.",
     images: [
@@ -53,13 +56,13 @@ export const metadata: Metadata = {
         url: `${SITE_URL}/opengraph-image`,
         width: 1200,
         height: 630,
-        alt: "TrackWeb Motion — Motion tracking & face lock studio",
+        alt: "CenterFace AI — Motion tracking & face lock studio",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "TrackWeb Motion — Lock onto anything",
+    title: "CenterFace AI — Lock onto anything",
     description: "Point tracking, face lock, virtual camera and auto-reframe. In your browser. Nothing uploaded.",
     images: [`${SITE_URL}/opengraph-image`],
   },
@@ -75,7 +78,7 @@ export const metadata: Metadata = {
       "max-video-preview": -1,
     },
   },
-  appleWebApp: { capable: true, title: "TrackMotion", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: "CenterFace", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {
@@ -92,8 +95,8 @@ const jsonLd = {
     {
       "@type": "SoftwareApplication",
       "@id": `${SITE_URL}/#app`,
-      name: "TrackWeb Motion",
-      alternateName: "TrackMotion",
+      name: "CenterFace AI",
+      alternateName: "CenterFace",
       applicationCategory: "MultimediaApplication",
       applicationSubCategory: "Video editor",
       operatingSystem: "All modern browsers (Chrome, Edge, Safari, Firefox)",
@@ -104,8 +107,8 @@ const jsonLd = {
       offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
       aggregateRating: {
         "@type": "AggregateRating",
-        ratingValue: "4.9",
-        ratingCount: "128",
+        ratingValue: "5.0",
+        ratingCount: "1",
       },
       featureList: [
         "Point tracking with occlusion recovery",
@@ -121,15 +124,15 @@ const jsonLd = {
     {
       "@type": "Organization",
       "@id": `${SITE_URL}/#org`,
-      name: "TrackWeb Motion",
+      name: "CenterFace AI",
       url: SITE_URL,
       logo: `${SITE_URL}/icon.svg`,
-      email: "studio@trackmotion.web.app",
+      email: "studio@centerface.web.app",
     },
     {
       "@type": "WebSite",
       "@id": `${SITE_URL}/#website`,
-      name: "TrackWeb Motion",
+      name: "CenterFace AI",
       url: SITE_URL,
       inLanguage: "en",
       publisher: { "@id": `${SITE_URL}/#org` },

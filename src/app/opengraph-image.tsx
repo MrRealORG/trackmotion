@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-export const alt = "TrackWeb Motion — Lock onto anything. Motion tracking and face lock in your browser.";
+export const alt = "CenterFace AI — Lock onto anything. Motion tracking and face lock in your browser.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const dynamic = "force-static";
@@ -85,7 +85,7 @@ export default async function OpengraphImage() {
             <path d="M16 4.5V9M16 27.5V23M4.5 16H9M27.5 16H23" stroke="#FFD60A" strokeWidth="2.4" strokeLinecap="round" />
             <circle cx="16" cy="16" r="2.9" fill="#fff" />
           </svg>
-          <span style={{ fontSize: 30, letterSpacing: -0.5 }}>TrackWeb Motion</span>
+          <span style={{ fontSize: 30, letterSpacing: -0.5 }}>CenterFace AI</span>
         </div>
 
         <div

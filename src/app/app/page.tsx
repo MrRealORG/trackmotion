@@ -128,9 +128,9 @@ export default function StudioPage() {
   return (
     <div className="flex h-[100dvh] flex-col overflow-hidden bg-black text-white">
       <header className="flex h-[52px] shrink-0 items-center gap-3 border-b border-white/[0.08] px-3 sm:px-4">
-        <Link href="/" className="flex items-center gap-2" aria-label="TrackWeb Motion — home">
+        <Link href="/" className="flex items-center gap-2" aria-label="CenterFace AI — home">
           <Mark size={22} />
-          <span className="hidden text-[13.5px] font-semibold tracking-[-0.02em] sm:block">TrackWeb</span>
+          <span className="hidden text-[13.5px] font-semibold tracking-[-0.02em] sm:block">CenterFace</span>
           <span className="osd hidden text-white/35 lg:block">Studio</span>
         </Link>
 

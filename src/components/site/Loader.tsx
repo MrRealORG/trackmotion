@@ -65,7 +65,7 @@ export function Loader() {
 
         <div className="osd absolute left-12 top-12 flex items-center gap-2 text-white/55">
           <i className="rec-dot inline-block h-2 w-2 rounded-full bg-rec" />
-          TrackWeb Motion
+          CenterFace AI
         </div>
         <div className="osd absolute right-12 top-12 text-white/40">4K · 60 fps</div>
 

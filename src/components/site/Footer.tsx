@@ -54,7 +54,7 @@ export function Footer() {
           <div>
             <Link href="/" className="inline-flex items-center gap-2.5">
               <Mark size={26} />
-              <span className="text-[15px] font-semibold tracking-[-0.02em]">TrackWeb Motion</span>
+              <span className="text-[15px] font-semibold tracking-[-0.02em]">CenterFace AI</span>
             </Link>
             <p className="mt-5 max-w-xs text-[14px] leading-relaxed text-white/50">
               Motion tracking that runs in your browser. The tracker, compositor and encoder are all local — your
@@ -101,8 +101,8 @@ export function Footer() {
         </div>
 
         <div className="mt-8 flex flex-col gap-2 text-[12.5px] text-white/35 sm:flex-row sm:items-center sm:justify-between">
-          <span>© {new Date().getFullYear()} TrackWeb Motion. All processing happens on your device.</span>
-          <span className="osd">studio@trackwebmotion.app</span>
+          <span>© {new Date().getFullYear()} CenterFace AI. All processing happens on your device.</span>
+          <span className="osd">studio@centerface.web.app</span>
         </div>
       </div>
     </footer>

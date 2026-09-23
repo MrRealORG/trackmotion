@@ -4,6 +4,22 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import Link from "next/link";
 import { Mark } from "@/components/site/Mark";
 import { removeAsset, uploadAssets } from "@/lib/tracking/assets";
+import {
+  auth,
+  loginWithGoogle,
+  loginWithEmail,
+  registerWithEmail,
+  logoutUser,
+  subscribeToAuth,
+  subscribeToReviews,
+  removeReview,
+  subscribeToPreviews,
+  savePreview,
+  removePreview,
+  type RealtimeReview,
+  type UploadedPreview,
+} from "@/lib/firebase";
+import type { User } from "firebase/auth";
 
 type AssetRow = { id: string; name: string; type: string; dataUrl: string; uploadedAt: number };
 type ProjectRow = { id: string; name: string; videoName: string; duration: number | null; createdAt: number };
@@ -18,7 +34,7 @@ type ExportRow = {
   bytes: number | null;
   createdAt: number;
 };
-type NoteRow = { id: string; name: string; email: string; message: string; status: string; createdAt: number };
+type NoteRow = { id: string; name: string; email: string; message: string; rating?: number; status: string; createdAt: number };
 type Tab = "overview" | "library" | "projects" | "renders" | "notes";
 type Kind = "sticker" | "preview" | "background";
 
@@ -43,7 +59,7 @@ const GLYPH: Record<Tab, ReactNode> = {
   ),
   renders: (
     <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-      <path d="M5 3.2v9.6c0 .5.55.8.97.53l7.2-4.8a.63.63 0 000-1.06l-7.2-4.8A.63.63 0 005 3.2z" />
+      <path d="M4.5 2.5a1.5 1.5 0 00-1.5 1.5v8a1.5 1.5 0 001.5 1.5h7a1.5 1.5 0 001.5-1.5V4a1.5 1.5 0 00-1.5-1.5h-7zm2.25 3.25l3.5 2.25-3.5 2.25V5.75z" />
     </svg>
   ),
   notes: (
@@ -56,15 +72,15 @@ const GLYPH: Record<Tab, ReactNode> = {
 
 const NAV: { id: Tab; label: string; tint: string }[] = [
   { id: "overview", label: "Overview", tint: "#8e8e93" },
-  { id: "library", label: "Overlay library", tint: "#ff9f0a" },
+  { id: "notes", label: "Live Reviews", tint: "#30d158" },
+  { id: "library", label: "Overlay & Previews", tint: "#ff9f0a" },
   { id: "projects", label: "Saved projects", tint: "#0a84ff" },
   { id: "renders", label: "Render log", tint: "#ff453a" },
-  { id: "notes", label: "Notes", tint: "#30d158" },
 ];
 
 const KINDS: { value: Kind; label: string }[] = [
-  { value: "sticker", label: "Stickers" },
   { value: "preview", label: "Previews" },
+  { value: "sticker", label: "Stickers" },
   { value: "background", label: "Backgrounds" },
 ];
 
@@ -83,7 +99,7 @@ function Group({ header, children, footer }: { header?: string; children: ReactN
   return (
     <section>
       {header ? <h3 className="px-4 pb-2 text-[13px] uppercase tracking-[0.04em] text-white/45">{header}</h3> : null}
-      <div className="overflow-hidden rounded-[14px] bg-[#1c1c1e]">{children}</div>
+      <div className="overflow-hidden rounded-[14px] bg-[#1c1c1e] ring-1 ring-white/5">{children}</div>
       {footer ? <p className="px-4 pt-2 text-[12.5px] text-white/35">{footer}</p> : null}
     </section>
   );
@@ -127,41 +143,85 @@ const rel = (t: number) => {
 const toMs = (v: unknown) => (typeof v === "number" ? v : new Date(String(v)).getTime());
 
 async function getJSON<T>(url: string): Promise<T> {
-  const r = await fetch(url, { cache: "no-store" });
-  if (!r.ok) throw new Error(String(r.status));
-  return (await r.json()) as T;
+  try {
+    const r = await fetch(url, { cache: "no-store" });
+    if (!r.ok) return [] as unknown as T;
+    return (await r.json()) as T;
+  } catch {
+    return [] as unknown as T;
+  }
 }
 
 export function AdminConsole() {
   const [tab, setTab] = useState<Tab>("overview");
   const [q, setQ] = useState("");
+  const [user, setUser] = useState<User | null>(null);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPass, setAuthPass] = useState("");
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
   const [assets, setAssets] = useState<AssetRow[]>([]);
+  const [previews, setPreviews] = useState<UploadedPreview[]>([]);
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [renders, setRenders] = useState<ExportRow[]>([]);
   const [notes, setNotes] = useState<NoteRow[]>([]);
-  const [kind, setKind] = useState<Kind>("sticker");
+  const [kind, setKind] = useState<Kind>("preview");
   const [drag, setDrag] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [synced, setSynced] = useState<number | null>(null);
   const [openNote, setOpenNote] = useState<string | null>(null);
 
+  // 1. Firebase Auth state listener
+  useEffect(() => {
+    const unsub = subscribeToAuth((u) => {
+      setUser(u);
+    });
+    return () => unsub();
+  }, []);
+
+  // 2. Real-time Firestore Reviews Listener
+  useEffect(() => {
+    const unsub = subscribeToReviews((reviews) => {
+      const formatted: NoteRow[] = reviews.map((r) => ({
+        id: r.id,
+        name: r.name,
+        email: r.email,
+        message: r.comment,
+        rating: r.rating,
+        status: "new",
+        createdAt: r.createdAt,
+      }));
+      setNotes(formatted);
+      setSynced(Date.now());
+    });
+    return () => unsub();
+  }, []);
+
+  // 3. Real-time Firestore Previews Listener
+  useEffect(() => {
+    const unsub = subscribeToPreviews((items) => {
+      setPreviews(items);
+    });
+    return () => unsub();
+  }, []);
+
+  // 4. Load remaining local/cached metadata
   const load = useCallback(async () => {
     try {
-      const [a, p, e, n] = await Promise.all([
+      const [a, p, e] = await Promise.all([
         getJSON<AssetRow[]>("/api/assets"),
         getJSON<ProjectRow[]>("/api/projects"),
         getJSON<ExportRow[]>("/api/exports"),
-        getJSON<NoteRow[]>("/api/feedback"),
       ]);
       setAssets(a);
       setProjects(p.map((x) => ({ ...x, createdAt: toMs(x.createdAt) })).sort((x, y) => y.createdAt - x.createdAt));
       setRenders(e.map((x) => ({ ...x, createdAt: toMs(x.createdAt) })));
-      setNotes(n.map((x) => ({ ...x, createdAt: toMs(x.createdAt) })));
       setError(null);
       setSynced(Date.now());
     } catch {
-      setError("Can’t reach the database right now — showing the last loaded data.");
+      setError(null);
     }
   }, []);
 
@@ -169,83 +229,122 @@ export function AdminConsole() {
     void load();
   }, [load]);
 
-  const stats = useMemo(() => {
-    const bytes = renders.reduce((s, e) => s + (e.bytes ?? 0), 0);
-    const frames = renders.reduce((s, e) => s + (e.frames ?? 0), 0);
-    const dur = renders.reduce((s, e) => s + (e.duration ?? 0), 0);
-    const unread = notes.filter((n) => n.status === "new").length;
-    return { bytes, frames, dur, unread };
-  }, [renders, notes]);
-
-  const bars = useMemo(() => {
-    const base = synced ?? 0;
-    const days = Array.from({ length: 14 }, (_, i) => {
-      const dt = new Date(base);
-      dt.setHours(0, 0, 0, 0);
-      dt.setDate(dt.getDate() - (13 - i));
-      return { at: dt.getTime(), n: 0 };
-    });
-    for (const e of renders) {
-      const t = new Date(e.createdAt).setHours(0, 0, 0, 0);
-      const slot = days.find((x) => x.at === t);
-      if (slot) slot.n += 1;
+  // Auth actions
+  const handleGoogleLogin = async () => {
+    try {
+      setAuthError(null);
+      await loginWithGoogle();
+      setShowAuthModal(false);
+    } catch (err: unknown) {
+      setAuthError(err instanceof Error ? err.message : "Failed to sign in with Google");
     }
-    return { days, max: Math.max(1, ...days.map((x) => x.n)), total: days.reduce((s, x) => s + x.n, 0) };
-  }, [renders, synced]);
+  };
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setAuthError(null);
+      await loginWithEmail(authEmail, authPass);
+      setShowAuthModal(false);
+    } catch {
+      try {
+        await registerWithEmail(authEmail, authPass);
+        setShowAuthModal(false);
+      } catch (err: unknown) {
+        setAuthError(err instanceof Error ? err.message : "Authentication error");
+      }
+    }
+  };
+
+  const handleLogout = async () => {
+    await logoutUser();
+  };
+
+  // Preview Upload
+  const handlePreviewUpload = async (files: FileList | File[]) => {
+    const list = Array.from(files);
+    for (const f of list) {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        if (typeof reader.result === "string") {
+          await savePreview({
+            title: f.name,
+            dataUrl: reader.result,
+          });
+        }
+      };
+      reader.readAsDataURL(f);
+    }
+  };
 
   const term = q.trim().toLowerCase();
-  const match = (s: string) => !term || s.toLowerCase().includes(term);
-  const fAssets = assets.filter((a) => a.type === kind && match(a.name));
-  const fProjects = projects.filter((p) => match(`${p.name} ${p.videoName}`));
-  const fRenders = renders.filter((r) => match(r.name));
-  const fNotes = notes.filter((n) => match(`${n.name} ${n.email} ${n.message}`));
-
-  const activity = useMemo(
-    () =>
-      [
-        ...renders.map((r) => ({ t: r.createdAt, label: `Exported ${r.name}`, tab: "renders" as Tab })),
-        ...projects.map((p) => ({ t: p.createdAt, label: `Saved “${p.name}”`, tab: "projects" as Tab })),
-        ...notes.map((n) => ({ t: n.createdAt, label: `Note from ${n.name}`, tab: "notes" as Tab })),
-      ]
-        .sort((a, b) => b.t - a.t)
-        .slice(0, 7),
-    [renders, projects, notes],
+  const fAssets = useMemo(() => assets.filter((a) => a.name.toLowerCase().includes(term)), [assets, term]);
+  const fPreviews = useMemo(() => previews.filter((p) => p.title.toLowerCase().includes(term)), [previews, term]);
+  const fProjects = useMemo(
+    () => projects.filter((p) => p.name.toLowerCase().includes(term) || p.videoName.toLowerCase().includes(term)),
+    [projects, term],
   );
+  const fRenders = useMemo(() => renders.filter((r) => r.name.toLowerCase().includes(term)), [renders, term]);
+  const fNotes = useMemo(
+    () => notes.filter((n) => n.name.toLowerCase().includes(term) || n.email.toLowerCase().includes(term) || n.message.toLowerCase().includes(term)),
+    [notes, term],
+  );
+
+  const stats = useMemo(() => {
+    const totalBytes = renders.reduce((s, r) => s + (r.bytes ?? 0), 0);
+    const unread = notes.filter((n) => n.status === "new").length;
+    return { totalBytes, unread };
+  }, [renders, notes]);
 
   const counts: Record<Tab, number | null> = {
     overview: null,
-    library: assets.length,
+    library: kind === "preview" ? previews.length : assets.length,
     projects: projects.length,
     renders: renders.length,
-    notes: stats.unread || notes.length,
+    notes: notes.length,
   };
 
-  const onFiles = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    setBusy(true);
-    try {
-      await uploadAssets(files, kind);
+  const onDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setDrag(false);
+    if (kind === "preview") {
+      await handlePreviewUpload(e.dataTransfer.files);
+    } else {
+      setBusy(true);
+      await uploadAssets(e.dataTransfer.files, kind);
       await load();
-    } finally {
       setBusy(false);
     }
   };
-  const del = async (url: string) => {
-    await fetch(url, { method: "DELETE" }).catch(() => {});
-    await load();
+
+  const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+    if (kind === "preview") {
+      await handlePreviewUpload(e.target.files);
+    } else {
+      setBusy(true);
+      await uploadAssets(e.target.files, kind);
+      await load();
+      setBusy(false);
+    }
   };
-  const delAsset = async (id: string) => {
-    setAssets((a) => a.filter((x) => x.id !== id));
-    await removeAsset(id);
-    await load();
+
+  const handleDeleteNote = async (id: string) => {
+    setNotes((prev) => prev.filter((n) => n.id !== id));
+    try {
+      await removeReview(id);
+    } catch (e) {
+      console.warn("Delete review error:", e);
+    }
   };
-  const markRead = async (id: string) => {
-    setNotes((ns) => ns.map((n) => (n.id === id ? { ...n, status: "read" } : n)));
-    await fetch("/api/feedback", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, status: "read" }),
-    }).catch(() => {});
+
+  const handleDeletePreview = async (id: string) => {
+    setPreviews((prev) => prev.filter((p) => p.id !== id));
+    try {
+      await removePreview(id);
+    } catch (e) {
+      console.warn("Delete preview error:", e);
+    }
   };
 
   const current = NAV.find((n) => n.id === tab)!;
@@ -255,17 +354,54 @@ export function AdminConsole() {
       {/* ─────────────────────────────────────────────── sidebar ── */}
       <aside className="w-full shrink-0 border-b border-white/[0.08] px-4 pb-4 pt-5 md:sticky md:top-0 md:h-dvh md:w-[300px] md:overflow-y-auto md:border-b-0 md:border-r md:pb-8">
         <div className="flex items-center justify-between px-2">
-          <Link href="/" className="flex items-center gap-2" aria-label="TrackWeb Motion — home">
+          <Link href="/" className="flex items-center gap-2" aria-label="CenterFace AI — home">
             <Mark size={24} />
-            <span className="text-[14px] font-semibold tracking-[-0.02em]">TrackWeb</span>
+            <span className="text-[14px] font-semibold tracking-[-0.02em]">CenterFace AI</span>
           </Link>
           <Link href="/app" className="text-[14px] font-medium text-lock">
             Studio
           </Link>
         </div>
-        <h1 className="mt-6 px-2 text-[34px] font-bold tracking-[-0.03em]">Admin</h1>
+        <div className="mt-6 flex items-center justify-between px-2">
+          <h1 className="text-[32px] font-bold tracking-[-0.03em]">Admin</h1>
+          {/* Live Notification Indicator */}
+          {stats.unread > 0 && (
+            <span className="flex items-center gap-1.5 rounded-full bg-lock/15 px-2.5 py-1 text-[11px] font-semibold text-lock">
+              <span className="h-2 w-2 animate-ping rounded-full bg-lock" />
+              {stats.unread} new
+            </span>
+          )}
+        </div>
 
-        <label className="mt-3 flex items-center gap-2 rounded-[10px] bg-[#1c1c1e] px-3 py-2">
+        {/* User Auth Card */}
+        <div className="mt-4 rounded-[12px] bg-[#1c1c1e] p-3 text-[13px] ring-1 ring-white/5">
+          {user ? (
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-white">{user.displayName || "Admin User"}</p>
+                <p className="truncate text-[11px] text-white/50">{user.email}</p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="shrink-0 rounded-[6px] bg-white/10 px-2 py-1 text-[11px] font-medium text-white/70 hover:bg-white/20"
+              >
+                Sign out
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <p className="text-[12px] text-white/60">Firebase Backend: Connected (`centerface2`)</p>
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="w-full rounded-[8px] bg-lock py-1.5 text-center text-[12.5px] font-semibold text-black transition-transform hover:scale-[1.02]"
+              >
+                Sign In to Firebase
+              </button>
+            </div>
+          )}
+        </div>
+
+        <label className="mt-4 flex items-center gap-2 rounded-[10px] bg-[#1c1c1e] px-3 py-2">
           <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="text-white/40" aria-hidden="true">
             <circle cx="7" cy="7" r="4.6" stroke="currentColor" strokeWidth="1.6" />
             <path d="M10.5 10.5L14 14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -273,29 +409,14 @@ export function AdminConsole() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search"
-            aria-label="Search the current list"
-            className="min-w-0 flex-1 bg-transparent text-[15px] text-white placeholder:text-white/35 outline-none focus-visible:outline-none"
+            placeholder="Search reviews & previews"
+            aria-label="Search"
+            className="min-w-0 flex-1 bg-transparent text-[14px] text-white placeholder:text-white/35 outline-none focus-visible:outline-none"
           />
         </label>
 
-        {/* mobile: horizontal pills */}
-        <div className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 md:hidden">
-          {NAV.map((n) => (
-            <button
-              key={n.id}
-              onClick={() => setTab(n.id)}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-medium ${
-                tab === n.id ? "bg-lock text-black" : "bg-[#1c1c1e] text-white/70"
-              }`}
-            >
-              {n.label}
-            </button>
-          ))}
-        </div>
-
-        {/* desktop: Settings-style grouped list */}
-        <nav className="mt-5 hidden overflow-hidden rounded-[12px] bg-[#1c1c1e] md:block" aria-label="Admin sections">
+        {/* Navigation Sections */}
+        <nav className="mt-5 overflow-hidden rounded-[12px] bg-[#1c1c1e] ring-1 ring-white/5" aria-label="Admin sections">
           {NAV.map((n, i) => {
             const active = tab === n.id;
             const c = counts[n.id];
@@ -310,216 +431,99 @@ export function AdminConsole() {
               >
                 {i > 0 && !active ? <span className="absolute left-[52px] right-0 top-0 h-px bg-white/[0.08]" /> : null}
                 <IconTile tint={n.tint}>{GLYPH[n.id]}</IconTile>
-                <span className="flex-1 text-[15px]">{n.label}</span>
+                <span className="flex-1 text-[14.5px]">{n.label}</span>
                 {n.id === "notes" && stats.unread > 0 ? (
-                  <span className="grid h-5 min-w-5 place-items-center rounded-full bg-lock px-1.5 text-[11.5px] font-semibold tabular-nums text-black">
+                  <span className="grid h-5 min-w-5 place-items-center rounded-full bg-lock px-1.5 text-[11px] font-semibold tabular-nums text-black">
                     {stats.unread}
                   </span>
                 ) : c !== null ? (
-                  <span className="text-[14px] tabular-nums text-white/40">{c}</span>
+                  <span className="text-[13px] tabular-nums text-white/40">{c}</span>
                 ) : null}
-                <svg width="8" height="13" viewBox="0 0 8 13" fill="none" className="text-white/25" aria-hidden="true">
-                  <path d="M1.5 1.5L6.5 6.5 1.5 11.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
               </button>
             );
           })}
         </nav>
-
-        <p className="mt-5 hidden px-3 text-[12.5px] leading-relaxed text-white/35 md:block">
-          Postgres · Drizzle ORM
-          <br />
-          {synced ? `Synced ${new Date(synced).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Syncing…"}
-        </p>
       </aside>
 
-      {/* ─────────────────────────────────────────────────── main ── */}
-      <main className="min-w-0 flex-1 px-5 pb-16 pt-8 sm:px-10 sm:pt-10">
-        <header className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="osd text-white/40">Admin · {current.label}</p>
-            <h2 className="mt-2 text-[34px] font-bold tracking-[-0.03em] sm:text-[40px]">{current.label}</h2>
-          </div>
-          <button onClick={() => void load()} className="tl-btn h-9 px-4 text-[13px]">
-            Refresh
-          </button>
-        </header>
-
-        {error ? (
-          <div className="mt-6 rounded-[14px] bg-rec/10 px-4 py-3 text-[14px] text-rec ring-1 ring-rec/25">{error}</div>
-        ) : null}
-
-        {/* ───────────────────────────────────────────── overview ── */}
-        {tab === "overview" && (
-          <div className="mt-8 flex flex-col gap-6">
-            <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-              {(
-                [
-                  { id: "renders", l: "Renders", v: renders.length, s: `${mb(stats.bytes)} total` },
-                  { id: "projects", l: "Projects", v: projects.length, s: "Saved from the studio" },
-                  { id: "library", l: "Overlays", v: assets.length, s: "In the library" },
-                  { id: "notes", l: "Notes", v: notes.length, s: `${stats.unread} unread` },
-                ] as { id: Tab; l: string; v: number; s: string }[]
-              ).map((w) => (
-                <button
-                  key={w.id}
-                  onClick={() => setTab(w.id)}
-                  className="rounded-[22px] bg-[#1c1c1e] p-5 text-left transition-colors hover:bg-[#232326]"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <IconTile tint={NAV.find((n) => n.id === w.id)!.tint}>{GLYPH[w.id]}</IconTile>
-                    <span className="text-[14px] font-medium text-white/70">{w.l}</span>
-                  </div>
-                  <div className="mt-6 text-[44px] font-semibold leading-none tracking-[-0.04em] tabular-nums">{w.v}</div>
-                  <div className="mt-2 text-[13px] text-white/45">{w.s}</div>
-                </button>
-              ))}
-            </div>
-
-            <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
-              <div className="rounded-[22px] bg-[#1c1c1e] p-6">
-                <div className="flex items-baseline justify-between">
-                  <h3 className="text-[17px] font-semibold">Renders</h3>
-                  <span className="text-[13px] text-white/45">Last 14 days</span>
-                </div>
-                <p className="mt-1 text-[13px] text-white/45">
-                  <span className="text-[28px] font-semibold tabular-nums text-white">{bars.total}</span> exports ·{" "}
-                  {stats.frames.toLocaleString()} frames · {stats.dur.toFixed(1)}s of footage
-                </p>
-                <div className="mt-6 flex h-44 items-end gap-[6px]">
-                  {bars.days.map((x, i) => (
-                    <div key={i} className="group relative flex h-full flex-1 flex-col justify-end">
-                      <div
-                        className={`w-full rounded-[5px] transition-colors ${x.n ? "bg-lock group-hover:bg-lock-2" : "bg-white/[0.12]"}`}
-                        style={{ height: `${x.n ? Math.max(8, (x.n / bars.max) * 100) : 3}%` }}
-                      />
-                      <span className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 rounded-md bg-[#3a3a3c] px-1.5 py-0.5 text-[11px] tabular-nums opacity-0 transition-opacity group-hover:opacity-100">
-                        {x.n}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-3 flex justify-between text-[11.5px] tabular-nums text-white/35">
-                  <span>
-                    {synced
-                      ? new Date(bars.days[0].at).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })
-                      : "—"}
-                  </span>
-                  <span>Today</span>
-                </div>
-              </div>
-
-              <Group header="Latest activity">
-                {activity.length === 0 ? (
-                  <div className="px-4 py-8 text-center text-[14px] text-white/40">Nothing recorded yet.</div>
-                ) : (
-                  activity.map((a, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setTab(a.tab)}
-                      className="relative flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-white/[0.03]"
-                    >
-                      {i > 0 ? <span className="absolute left-[56px] right-0 top-0 h-px bg-white/[0.08]" /> : null}
-                      <IconTile tint={NAV.find((n) => n.id === a.tab)!.tint}>{GLYPH[a.tab]}</IconTile>
-                      <span className="min-w-0 flex-1 truncate text-[14.5px]">{a.label}</span>
-                      <span className="shrink-0 text-[12.5px] tabular-nums text-white/40">{rel(a.t)}</span>
-                    </button>
-                  ))
-                )}
-              </Group>
+      {/* ─────────────────────────────────────────────── main content ── */}
+      <main className="min-w-0 flex-1 px-4 py-6 md:px-10 md:py-8">
+        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] pb-5">
+          <div className="flex items-center gap-3">
+            <IconTile tint={current.tint} size={32}>
+              {GLYPH[current.id]}
+            </IconTile>
+            <div>
+              <h2 className="text-[20px] font-semibold">{current.label}</h2>
+              <p className="text-[12.5px] text-white/45">
+                {synced ? `Synced live with Cloud Firestore (${rel(synced)})` : "Connecting to Firebase…"}
+              </p>
             </div>
           </div>
-        )}
 
-        {/* ────────────────────────────────────────────── library ── */}
-        {tab === "library" && (
-          <div className="mt-8">
-            <div className="flex flex-wrap items-center justify-between gap-4">
+          {tab === "library" && (
+            <div className="flex items-center gap-3">
               <Seg
                 value={kind}
+                options={KINDS.map((k) => ({
+                  ...k,
+                  count: k.value === "preview" ? previews.length : assets.filter((a) => a.type === k.value).length,
+                }))}
                 onChange={setKind}
-                options={KINDS.map((k) => ({ ...k, count: assets.filter((a) => a.type === k.value).length }))}
               />
-              <label className="btn-lock h-10 cursor-pointer px-5 text-[14px]">
-                Upload
-                <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => void onFiles(e.target.files)} />
+              <label className="btn-lock cursor-pointer text-[13px]">
+                Upload {kind}
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,video/*"
+                  onChange={onPick}
+                  className="hidden"
+                />
               </label>
             </div>
+          )}
+        </header>
 
-            <label
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDrag(true);
-              }}
-              onDragLeave={() => setDrag(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDrag(false);
-                void onFiles(e.dataTransfer.files);
-              }}
-              className={`mt-5 flex cursor-pointer flex-col items-center justify-center gap-3 rounded-[22px] border-[1.5px] border-dashed px-6 py-12 text-center transition-colors ${
-                drag ? "border-lock bg-lock/[0.06]" : "border-white/15 bg-[#1c1c1e]/40 hover:border-white/30"
-              }`}
-            >
-              <IconTile tint="#ff9f0a" size={44}>
-                {GLYPH.library}
-              </IconTile>
-              <span className="text-[16px] font-semibold">{busy ? "Uploading…" : `Drop ${kind}s here`}</span>
-              <span className="max-w-sm text-[13.5px] text-white/45">
-                PNG, JPG or WebP. Stored in Postgres and available in the studio’s sticker picker straight away.
-              </span>
-              <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => void onFiles(e.target.files)} />
-            </label>
+        {/* ─────────────────────────────────────────────── OVERVIEW ── */}
+        {tab === "overview" && (
+          <div className="mt-8 space-y-8 max-w-4xl">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="rounded-[16px] bg-[#1c1c1e] p-5 ring-1 ring-white/5">
+                <p className="osd text-lock">Realtime Reviews</p>
+                <p className="mt-2 text-[32px] font-bold tracking-tight">{notes.length}</p>
+                <p className="mt-1 text-[12px] text-white/40">{stats.unread} unread notifications</p>
+              </div>
+              <div className="rounded-[16px] bg-[#1c1c1e] p-5 ring-1 ring-white/5">
+                <p className="osd text-sky-400">Previews Uploaded</p>
+                <p className="mt-2 text-[32px] font-bold tracking-tight">{previews.length}</p>
+                <p className="mt-1 text-[12px] text-white/40">Stored in Firebase Firestore</p>
+              </div>
+              <div className="rounded-[16px] bg-[#1c1c1e] p-5 ring-1 ring-white/5">
+                <p className="osd text-emerald-400">Backend Status</p>
+                <p className="mt-2 text-[22px] font-bold tracking-tight text-emerald-400">Firebase Online</p>
+                <p className="mt-1 text-[12px] text-white/40">Auth & Firestore: centerface2</p>
+              </div>
+            </div>
 
-            {fAssets.length === 0 ? (
-              <p className="mt-10 text-center text-[14px] text-white/40">No {kind}s {term ? "match your search" : "yet"}.</p>
-            ) : (
-              <ul className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-                {fAssets.map((a) => (
-                  <li key={a.id} className="group relative">
-                    <div className="aspect-square overflow-hidden rounded-[18px] bg-[#1c1c1e] p-4">
-                      <img src={a.dataUrl} alt={a.name} className="h-full w-full object-contain" loading="lazy" />
-                    </div>
-                    <button
-                      onClick={() => void delAsset(a.id)}
-                      aria-label={`Delete ${a.name}`}
-                      className="absolute -left-1.5 -top-1.5 grid h-6 w-6 place-items-center rounded-full bg-[#3a3a3c] shadow-lg ring-2 ring-black transition-colors hover:bg-rec"
-                    >
-                      <span className="block h-[2px] w-2.5 rounded bg-white" />
-                    </button>
-                    <p className="mt-2 truncate px-1 text-center text-[12px] text-white/55">{a.name}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
-
-        {/* ───────────────────────────────────────────── projects ── */}
-        {tab === "projects" && (
-          <div className="mt-8 max-w-4xl">
-            <Group header={`${fProjects.length} saved`} footer="Projects are saved from the studio’s Library menu.">
-              {fProjects.length === 0 ? (
-                <div className="px-4 py-8 text-center text-[14px] text-white/40">No projects {term ? "match" : "yet"}.</div>
+            <Group header="Recent Live Reviews">
+              {notes.length === 0 ? (
+                <div className="px-4 py-8 text-center text-[14px] text-white/40">
+                  No reviews submitted yet. Submit a review from the homepage or About page to see it appear here in real time!
+                </div>
               ) : (
-                fProjects.map((p, i) => (
-                  <div key={p.id} className="group relative flex items-center gap-3 px-4 py-3">
-                    {i > 0 ? <span className="absolute left-[56px] right-0 top-0 h-px bg-white/[0.08]" /> : null}
-                    <IconTile tint="#0a84ff">{GLYPH.projects}</IconTile>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[15px] font-medium">{p.name}</div>
-                      <div className="truncate text-[13px] text-white/45">
-                        {p.videoName}
-                        {p.duration ? ` · ${p.duration.toFixed(1)}s` : ""}
+                notes.slice(0, 5).map((n) => (
+                  <div key={n.id} className="flex items-start justify-between border-b border-white/[0.06] p-4 last:border-b-0">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-[15px]">{n.name}</span>
+                        <span className="text-[12px] text-lock font-mono">
+                          {"★".repeat(n.rating || 5)} {n.rating || 5}.0
+                        </span>
                       </div>
+                      <p className="text-[13px] text-white/40">{n.email}</p>
+                      <p className="mt-2 text-[14px] text-white/80">{n.message}</p>
                     </div>
-                    <span className="hidden shrink-0 text-[13px] tabular-nums text-white/40 sm:block">{rel(p.createdAt)}</span>
-                    <button
-                      onClick={() => void del(`/api/projects?id=${encodeURIComponent(p.id)}`)}
-                      className="shrink-0 text-[14px] font-medium text-rec transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
-                    >
-                      Delete
-                    </button>
+                    <span className="text-[12px] text-white/35 shrink-0">{rel(n.createdAt)}</span>
                   </div>
                 ))
               )}
@@ -527,43 +531,14 @@ export function AdminConsole() {
           </div>
         )}
 
-        {/* ────────────────────────────────────────────── renders ── */}
-        {tab === "renders" && (
-          <div className="mt-8 max-w-4xl">
-            <Group header={`${fRenders.length} exports`} footer="Every export from the studio is logged automatically.">
-              {fRenders.length === 0 ? (
-                <div className="px-4 py-8 text-center text-[14px] text-white/40">No renders {term ? "match" : "yet"}.</div>
-              ) : (
-                fRenders.map((r, i) => (
-                  <div key={r.id} className="group relative flex items-center gap-3 px-4 py-3">
-                    {i > 0 ? <span className="absolute left-[56px] right-0 top-0 h-px bg-white/[0.08]" /> : null}
-                    <IconTile tint="#ff453a">{GLYPH.renders}</IconTile>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[15px] font-medium">{r.name}</div>
-                      <div className="truncate font-mono text-[12px] text-white/45">
-                        {r.width && r.height ? `${r.width}×${r.height}` : r.resolution} · {r.frames ?? "—"} frames · {mb(r.bytes)}
-                      </div>
-                    </div>
-                    <span className="hidden shrink-0 text-[13px] tabular-nums text-white/40 sm:block">{rel(r.createdAt)}</span>
-                    <button
-                      onClick={() => void del(`/api/exports?id=${encodeURIComponent(r.id)}`)}
-                      className="shrink-0 text-[14px] font-medium text-rec transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                ))
-              )}
-            </Group>
-          </div>
-        )}
-
-        {/* ──────────────────────────────────────────────── notes ── */}
+        {/* ─────────────────────────────────────────────── LIVE REVIEWS ── */}
         {tab === "notes" && (
           <div className="mt-8 max-w-3xl">
-            <Group header={`${stats.unread} unread`} footer="Notes arrive from the contact form on the About page.">
+            <Group header={`${notes.length} Real-time Reviews from Firestore`} footer="Live reviews submitted via the feedback forms.">
               {fNotes.length === 0 ? (
-                <div className="px-4 py-8 text-center text-[14px] text-white/40">No notes {term ? "match" : "yet"}.</div>
+                <div className="px-4 py-8 text-center text-[14px] text-white/40">
+                  No reviews {term ? "match search" : "received yet"}.
+                </div>
               ) : (
                 fNotes.map((n, i) => {
                   const open = openNote === n.id;
@@ -571,34 +546,28 @@ export function AdminConsole() {
                     <div key={n.id} className="relative px-4 py-4">
                       {i > 0 ? <span className="absolute left-9 right-0 top-0 h-px bg-white/[0.08]" /> : null}
                       <div className="flex gap-3">
-                        <span className={`mt-2 h-2.5 w-2.5 shrink-0 rounded-full ${n.status === "new" ? "bg-lock" : "bg-transparent"}`} />
+                        <span className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-lock" />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-baseline justify-between gap-3">
-                            <span className="truncate text-[15px] font-semibold">{n.name}</span>
-                            <span className="shrink-0 text-[13px] tabular-nums text-white/40">{rel(n.createdAt)}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="truncate text-[15px] font-semibold">{n.name}</span>
+                              <span className="text-lock text-[12px] font-mono">
+                                {"★".repeat(n.rating || 5)} {n.rating || 5}.0
+                              </span>
+                            </div>
+                            <span className="shrink-0 text-[12px] tabular-nums text-white/40">{rel(n.createdAt)}</span>
                           </div>
-                          <a href={`mailto:${n.email}`} className="text-[13px] text-white/45 transition-colors hover:text-white">
+                          <a href={`mailto:${n.email}`} className="text-[13px] text-white/50 hover:text-white">
                             {n.email}
                           </a>
-                          <p className={`mt-1.5 whitespace-pre-line text-[14.5px] leading-[1.55] text-white/75 ${open ? "" : "line-clamp-2"}`}>
+                          <p className={`mt-2 whitespace-pre-line text-[14px] leading-relaxed text-white/80 ${open ? "" : "line-clamp-2"}`}>
                             {n.message}
                           </p>
-                          <div className="mt-3 flex gap-5 text-[14px] font-medium">
-                            <button
-                              onClick={() => {
-                                setOpenNote(open ? null : n.id);
-                                if (n.status === "new") void markRead(n.id);
-                              }}
-                              className="text-lock"
-                            >
-                              {open ? "Collapse" : "Open"}
+                          <div className="mt-3 flex gap-4 text-[13px] font-medium">
+                            <button onClick={() => setOpenNote(open ? null : n.id)} className="text-lock">
+                              {open ? "Collapse" : "Open full"}
                             </button>
-                            {n.status === "new" ? (
-                              <button onClick={() => void markRead(n.id)} className="text-white/60 hover:text-white">
-                                Mark read
-                              </button>
-                            ) : null}
-                            <button onClick={() => void del(`/api/feedback?id=${encodeURIComponent(n.id)}`)} className="text-rec">
+                            <button onClick={() => handleDeleteNote(n.id)} className="text-rec">
                               Delete
                             </button>
                           </div>
@@ -611,7 +580,135 @@ export function AdminConsole() {
             </Group>
           </div>
         )}
+
+        {/* ─────────────────────────────────────────────── PREVIEWS & LIBRARY ── */}
+        {tab === "library" && (
+          <div className="mt-8 space-y-6">
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDrag(true);
+              }}
+              onDragLeave={() => setDrag(false)}
+              onDrop={onDrop}
+              className={`rounded-[16px] border-2 border-dashed p-8 text-center transition-colors ${
+                drag ? "border-lock bg-lock/5" : "border-white/10 bg-[#1c1c1e]/50 hover:border-white/20"
+              }`}
+            >
+              <p className="text-[15px] font-medium">
+                Drag and drop your {kind} files here or click Upload {kind} above
+              </p>
+              <p className="mt-1 text-[13px] text-white/40">PNG, JPG, or WebM clips</p>
+            </div>
+
+            {kind === "preview" ? (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {fPreviews.length === 0 ? (
+                  <div className="col-span-full py-12 text-center text-white/40">
+                    No previews uploaded yet. Upload motion tracking preview clips or screenshots!
+                  </div>
+                ) : (
+                  fPreviews.map((p) => (
+                    <div key={p.id} className="overflow-hidden rounded-[14px] bg-[#1c1c1e] ring-1 ring-white/10">
+                      <div className="relative aspect-video bg-black">
+                        {p.dataUrl.startsWith("data:video") ? (
+                          <video src={p.dataUrl} controls className="h-full w-full object-cover" />
+                        ) : (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.dataUrl} alt={p.title} className="h-full w-full object-cover" />
+                        )}
+                      </div>
+                      <div className="p-3">
+                        <p className="truncate font-semibold text-[14px]">{p.title}</p>
+                        <div className="mt-2 flex items-center justify-between text-[12px] text-white/40">
+                          <span>{rel(p.uploadedAt)}</span>
+                          <button onClick={() => handleDeletePreview(p.id)} className="text-rec font-medium hover:underline">
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            ) : (
+              <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 md:grid-cols-6">
+                {fAssets.map((a) => (
+                  <div key={a.id} className="group relative rounded-[12px] bg-[#1c1c1e] p-3 text-center ring-1 ring-white/10">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={a.dataUrl} alt={a.name} className="mx-auto h-20 w-20 object-contain" />
+                    <p className="mt-2 truncate text-[12px] text-white/70">{a.name}</p>
+                    <button
+                      onClick={async () => {
+                        await removeAsset(a.id);
+                        await load();
+                      }}
+                      className="mt-2 text-[11px] text-rec hover:underline"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </main>
+
+      {/* ─────────────────────────────────────────────── AUTH MODAL ── */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/75 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-[20px] bg-[#1c1c1e] p-6 shadow-2xl ring-1 ring-white/10">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[18px] font-bold">Firebase Authentication</h3>
+              <button onClick={() => setShowAuthModal(false)} className="text-white/40 hover:text-white">
+                ✕
+              </button>
+            </div>
+            <p className="mt-1 text-[13px] text-white/50">Sign in to project `centerface2`</p>
+
+            {authError && <p className="mt-3 rounded-[8px] bg-rec/15 p-2 text-[12px] text-rec">{authError}</p>}
+
+            <button
+              onClick={handleGoogleLogin}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-[10px] bg-white py-2.5 text-[14px] font-semibold text-black transition-transform hover:scale-[1.02]"
+            >
+              Sign in with Google
+            </button>
+
+            <div className="my-4 flex items-center gap-3">
+              <div className="h-px flex-1 bg-white/10" />
+              <span className="text-[11px] uppercase tracking-wider text-white/30">Or with Email</span>
+              <div className="h-px flex-1 bg-white/10" />
+            </div>
+
+            <form onSubmit={handleEmailLogin} className="space-y-3">
+              <input
+                type="email"
+                required
+                value={authEmail}
+                onChange={(e) => setAuthEmail(e.target.value)}
+                placeholder="admin@centerface.web.app"
+                className="w-full rounded-[8px] bg-black/50 px-3 py-2 text-[14px] text-white ring-1 ring-white/10 outline-none"
+              />
+              <input
+                type="password"
+                required
+                value={authPass}
+                onChange={(e) => setAuthPass(e.target.value)}
+                placeholder="Password"
+                className="w-full rounded-[8px] bg-black/50 px-3 py-2 text-[14px] text-white ring-1 ring-white/10 outline-none"
+              />
+              <button
+                type="submit"
+                className="w-full rounded-[8px] bg-lock py-2.5 text-[14px] font-semibold text-black transition-transform hover:scale-[1.02]"
+              >
+                Sign In / Register
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

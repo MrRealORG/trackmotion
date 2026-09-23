@@ -51,10 +51,10 @@ export function Nav() {
         }`}
       >
         <nav aria-label="Primary" className="glass flex h-12 w-full max-w-[880px] items-center gap-2 rounded-full pl-3 pr-1.5">
-          <Link href="/" className="flex items-center gap-2 pr-2" aria-label="TrackWeb Motion — home">
+          <Link href="/" className="flex items-center gap-2 pr-2" aria-label="CenterFace AI — home">
             <Mark size={24} />
-            <span className="text-[14px] font-semibold tracking-[-0.02em]">TrackWeb</span>
-            <span className="-ml-1 hidden text-[14px] font-medium tracking-[-0.02em] text-white/45 sm:inline">Motion</span>
+            <span className="text-[14px] font-semibold tracking-[-0.02em]">CenterFace</span>
+            <span className="-ml-1 hidden text-[14px] font-medium tracking-[-0.02em] text-lock sm:inline">AI</span>
           </Link>
 
           <ul className="mx-auto hidden items-center gap-0.5 md:flex">

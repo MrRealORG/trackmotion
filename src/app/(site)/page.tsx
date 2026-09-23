@@ -8,9 +8,9 @@ import { ScrollReframe } from "@/components/site/ScrollReframe";
 import { Icon, type IconName } from "@/components/tracking/Icons";
 
 export const metadata: Metadata = {
-  title: { absolute: "TrackWeb Motion — Motion tracking & face lock in your browser" },
+  title: { absolute: "CenterFace AI — Motion Tracking & Face Lock in Your Browser" },
   description:
-    "Click anything in a video and TrackWeb Motion follows it through every frame. Face lock, nose lock, point tracking, virtual camera moves and auto-reframe to 9:16 — frame-exact MP4 with audio, no upload, no signup.",
+    "Click anything in a video and CenterFace AI follows it through every frame. Face lock, nose lock, point tracking, virtual camera moves and auto-reframe to 9:16 — frame-exact MP4 with audio, no upload, no signup.",
   alternates: { canonical: "/" },
 };
 
@@ -74,9 +74,9 @@ const SPECS: { title: string; rows: [string, string][] }[] = [
 ];
 
 const STATS: [string, string][] = [
-  ["10M+", "Edits created"],
-  ["50K+", "Active creators"],
-  ["4.9", "Average rating"],
+  ["0", "Edits created"],
+  ["0", "Active creators"],
+  ["0.0", "Average rating"],
   ["0 B", "Uploaded, ever"],
 ];
 
@@ -205,7 +205,7 @@ export default function HomePage() {
             </h1>
             <div className="mt-8 flex flex-col gap-7 sm:flex-row sm:items-end sm:justify-between">
               <p className="rv max-w-md text-[16.5px] leading-[1.55] text-white/70" style={d(220)}>
-                Click a face, a nose, a wheel. TrackWeb follows it through every frame — right in your browser, with
+                Click a face, a nose, a wheel. CenterFace AI follows it through every frame — right in your browser, with
                 nothing uploaded.
               </p>
               <div className="rv flex flex-wrap items-center gap-3" style={d(320)}>
@@ -223,11 +223,11 @@ export default function HomePage() {
       </section>
 
       {/* ─────────────────────────────────────────────── statement ── */}
-      <section className="mx-auto max-w-[1120px] px-6 py-32 sm:px-10 sm:py-44" aria-label="What TrackWeb Motion does">
+      <section className="mx-auto max-w-[1120px] px-6 py-32 sm:px-10 sm:py-44" aria-label="What CenterFace AI does">
         <p className="rv osd text-white/40">01 — What it does</p>
         <WordReveal
           className="mt-8 text-[clamp(1.9rem,4.4vw,3.7rem)] font-semibold leading-[1.1] tracking-[-0.038em]"
-          text="Point at anything that moves. TrackWeb solves its motion across every frame, finds it again after it disappears, and welds whatever you like to it — text, stickers, a camera move — without your clip ever leaving the device."
+          text="Point at anything that moves. CenterFace AI solves its motion across every frame, finds it again after it disappears, and welds whatever you like to it — text, stickers, a camera move — without your clip ever leaving the device."
         />
       </section>
 
