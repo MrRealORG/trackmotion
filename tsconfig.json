@@ -37,6 +37,8 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "api_legacy_backup",
+    "db_legacy_backup"
   ]
 }
