@@ -5,6 +5,7 @@ import { join } from "node:path";
 export const alt = "TrackWeb Motion — Lock onto anything. Motion tracking and face lock in your browser.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+export const dynamic = "force-static";
 
 /* Hero face sits at (0.662, 0.49) of a 1792×1008 frame → scaled to 1200 wide. */
 const IMG_W = 1200;
