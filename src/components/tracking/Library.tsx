@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react'
 import { store, useApp } from '@/lib/tracking/store'
 import { loadFile, loadProject, saveProject, toast } from '@/lib/tracking/actions'
 import { Corners } from '@/components/site/Viewfinder'
-
-
+import { ResponsiveBanner } from '@/components/ads/ResponsiveBanner'
 interface SavedProject {
   id: string
   name: string
@@ -189,7 +188,7 @@ export function StudioStart() {
   const pick = (f?: File | null) => f && loadFile(f)
 
   return (
-    <div className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto p-4 sm:p-8">
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto p-4 sm:p-8">
       <label
         onDragOver={(e) => {
           e.preventDefault()
@@ -234,6 +233,11 @@ export function StudioStart() {
           <span>Esc · Exit</span>
         </div>
       </label>
+
+      {/* Ad in studio standby view */}
+      <div className="mt-8 flex w-full max-w-5xl justify-center">
+        <ResponsiveBanner />
+      </div>
     </div>
   )
 }

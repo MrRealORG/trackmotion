@@ -128,6 +128,10 @@ export default function ExportModal() {
               <span>{Math.round(p * 100)}%</span>
               <span>{eta !== null ? `~${Math.ceil(eta)}s left` : "starting…"}</span>
             </div>
+            {/* Ad while rendering & exporting */}
+            <div className="my-2 flex justify-center overflow-hidden">
+              <Banner300x250 />
+            </div>
             <button onClick={() => ctlRef.current?.abort()} className="mt-1 rounded-lg bg-white/10 py-2 text-sm hover:bg-white/15">
               Cancel
             </button>

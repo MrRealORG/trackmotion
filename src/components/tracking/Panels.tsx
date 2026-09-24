@@ -38,6 +38,7 @@ import type {
 import { Chip, Section, Seg, Slider, Toggle } from "./ui";
 import { Icon, type IconName, ATTACHMENT_ICONS } from "./Icons";
 import { getUploadedAssets, type UploadedAsset } from "@/lib/tracking/assets";
+import { Banner300x250 } from "@/components/ads/Banner300x250";
 import {
   addSpeedKey,
   removeSpeedKey,
@@ -1032,6 +1033,11 @@ export default function Panels() {
         {tab === "enhance" && <EnhanceTab />}
         {tab === "trim" && <TrimTab />}
         {tab === "fx" && <FxTab />}
+
+        {/* Ad in editor tools panel */}
+        <div className="mt-6 flex justify-center border-t border-white/[0.08] pt-4">
+          <Banner300x250 className="my-0" />
+        </div>
       </div>
     </div>
   );

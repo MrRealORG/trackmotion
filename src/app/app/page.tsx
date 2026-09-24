@@ -13,8 +13,7 @@ import Panels from "@/components/tracking/Panels";
 import ExportModal from "@/components/tracking/ExportModal";
 import { Library, StudioStart } from "@/components/tracking/Library";
 import { Mark } from "@/components/site/Mark";
-
-
+import { Banner300x250 } from "@/components/ads/Banner300x250";
 const RAIL = [
   { href: "/", label: "Index" },
   { href: "/app", label: "Studio" },
@@ -67,6 +66,11 @@ function TaskOverlay() {
             </div>
           </>
         )}
+
+        {/* Ad while importing clip or tracking */}
+        <div className="mt-4 flex justify-center overflow-hidden">
+          <Banner300x250 />
+        </div>
 
         {task.cancellable && (
           <button
