@@ -25,13 +25,13 @@ import {
 } from "firebase/firestore";
 
 const firebaseConfig = {
-  projectId: "centerface2",
-  appId: "1:341484418456:web:c4ab59b8b4a5470c46a7ed",
-  storageBucket: "centerface2.firebasestorage.app",
-  apiKey: "AIzaSyDBP7p1aN_mcV584lFPspT8or3GqOiOS7E",
-  authDomain: "centerface2.firebaseapp.com",
-  messagingSenderId: "341484418456",
-  measurementId: "G-RGRH7NG5B8",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDBP7p1aN_mcV584lFPspT8or3GqOiOS7E",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "centerface2.firebaseapp.com",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "centerface2",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "centerface2.firebasestorage.app",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "341484418456",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:341484418456:web:c4ab59b8b4a5470c46a7ed",
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-RGRH7NG5B8",
 };
 
 export const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
