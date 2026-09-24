@@ -6,6 +6,8 @@ import { Corners, Cover, Lock, PixelShades, TrackPath } from "@/components/site/
 import { ScrollVar, Timecode, WordReveal } from "@/components/site/Motion";
 import { ScrollReframe } from "@/components/site/ScrollReframe";
 import { HomeReviews } from "@/components/site/HomeReviews";
+import { ResponsiveBanner } from "@/components/ads/ResponsiveBanner";
+import { NativeBanner } from "@/components/ads/NativeBanner";
 
 export const metadata: Metadata = {
   title: { absolute: "CenterFace AI — Free Online Face Lock & Motion Tracking (No Watermark)" },
@@ -353,8 +355,14 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ─────────────────────────────────────────── banner ad ── */}
+      <ResponsiveBanner className="my-10" />
+
       {/* ─────────────────────────────────────────── reviews ── */}
       <HomeReviews />
+
+      {/* ─────────────────────────────────────────── native ad recommendations ── */}
+      <NativeBanner className="my-12" />
 
       {/* ───────────────────────────────────────── specifications ── */}
       <section id="specs" className="mx-auto max-w-[1280px] px-6 py-28 sm:px-10 sm:py-40">

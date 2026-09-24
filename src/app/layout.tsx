@@ -3,6 +3,7 @@ import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Loader } from "@/components/site/Loader";
+import { SocialBarLoader } from "@/components/ads/SocialBarLoader";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "swap" });
@@ -225,6 +226,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Loader />
         {children}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        {/* Adsterra Social Bar */}
+        <SocialBarLoader />
       </body>
     </html>
   );

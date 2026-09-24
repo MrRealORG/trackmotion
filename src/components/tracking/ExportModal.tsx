@@ -7,6 +7,7 @@ import { outputSize } from "@/lib/tracking/player";
 import { Seg, Toggle } from "./ui";
 import { ExportReady } from "./ExportReady";
 import { recordExport } from "@/lib/firebase";
+import { Banner300x250 } from "@/components/ads/Banner300x250";
 
 type Res = "720" | "1080" | "source";
 
@@ -102,13 +103,16 @@ export default function ExportModal() {
             {showAd ? (
               <ExportReady onComplete={() => setShowAd(false)} />
             ) : (
-              <a
-                href={result.url}
-                download={outName}
-                className="rounded-full bg-lock py-2.5 text-center font-semibold text-black hover:brightness-110"
-              >
-                Download {result.ext.toUpperCase()} ({(result.blob.size / 1e6).toFixed(1)} MB)
-              </a>
+              <>
+                <a
+                  href={result.url}
+                  download={outName}
+                  className="rounded-full bg-lock py-2.5 text-center font-semibold text-black hover:brightness-110"
+                >
+                  Download {result.ext.toUpperCase()} ({(result.blob.size / 1e6).toFixed(1)} MB)
+                </a>
+                <Banner300x250 className="my-1" />
+              </>
             )}
             <button onClick={() => { setResult(null); setShowAd(false); }} className="text-xs text-white/50 hover:text-white/80">
               Export again with other settings

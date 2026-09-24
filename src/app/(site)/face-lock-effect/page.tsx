@@ -3,6 +3,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { MEDIA } from "@/lib/media";
 import { Mark } from "@/components/site/Mark";
+import { ResponsiveBanner } from "@/components/ads/ResponsiveBanner";
+import { NativeBanner } from "@/components/ads/NativeBanner";
 
 export const metadata: Metadata = {
   title: "Face Lock Effect Online — Free Video Face Tracking Tool & Tutorial (No Watermark)",
@@ -334,6 +336,9 @@ export default function FaceLockPage() {
         </div>
       </section>
 
+      {/* ────────────────────────── Adsterra Banner (728x90 / 300x250) ── */}
+      <ResponsiveBanner className="my-10" />
+
       {/* ──────── Section 3: Tracket Motion: Video Editor Alternative ── */}
       <section className="mx-auto max-w-[1280px] px-6 pt-28 sm:px-10">
         <div className="rounded-[24px] border border-white/10 bg-[#121214] p-8 sm:p-12">
@@ -393,6 +398,9 @@ export default function FaceLockPage() {
           </div>
         </div>
       </section>
+
+      {/* ────────────────────────── Native Banner Widget ── */}
+      <NativeBanner className="my-14" />
 
       {/* ────────────────────────── Section 4: Frequently Asked Questions ── */}
       <section className="mx-auto max-w-[1280px] px-6 pt-28 sm:px-10">
