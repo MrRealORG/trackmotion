@@ -10,18 +10,12 @@ export function SocialBarLoader() {
     // Keep admin console clean & distraction-free
     if (pathname && pathname.startsWith("/admin")) return;
 
+    if (document.querySelector('script[src*="06d8d6965a54e6c5b090d9ab8d3cf64b.js"]')) return;
+
     const script = document.createElement("script");
     script.src = "https://pl31482833.profitableratecpmnetwork.com/06/d8/d6/06d8d6965a54e6c5b090d9ab8d3cf64b.js";
     script.async = true;
     document.body.appendChild(script);
-
-    return () => {
-      try {
-        if (script.parentNode) {
-          script.parentNode.removeChild(script);
-        }
-      } catch {}
-    };
   }, [pathname]);
 
   return null;

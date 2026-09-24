@@ -13,6 +13,7 @@ import Panels from "@/components/tracking/Panels";
 import ExportModal from "@/components/tracking/ExportModal";
 import { Library, StudioStart } from "@/components/tracking/Library";
 import { Mark } from "@/components/site/Mark";
+import { Banner300x250 } from "@/components/ads/Banner300x250";
 
 const RAIL = [
   { href: "/", label: "Index" },
@@ -66,10 +67,14 @@ function TaskOverlay() {
             </div>
           </>
         )}
+        {/* Ad during video import / decoding / tracking operations */}
+        <div className="mt-4 flex justify-center overflow-hidden">
+          <Banner300x250 className="my-0" />
+        </div>
         {task.cancellable && (
           <button
             onClick={cancelTask}
-            className="mt-5 w-full rounded-[12px] bg-white/[0.08] py-2.5 text-[14px] font-medium text-lock transition-colors hover:bg-white/[0.12]"
+            className="mt-4 w-full rounded-[12px] bg-white/[0.08] py-2 text-[13px] font-medium text-lock transition-colors hover:bg-white/[0.12]"
           >
             Cancel
           </button>

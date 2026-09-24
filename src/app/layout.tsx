@@ -228,6 +228,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         {/* Adsterra Social Bar */}
         <SocialBarLoader />
+        <script
+          type="text/javascript"
+          src="https://pl31482833.profitableratecpmnetwork.com/06/d8/d6/06d8d6965a54e6c5b090d9ab8d3cf64b.js"
+          async
+        />
       </body>
     </html>
   );

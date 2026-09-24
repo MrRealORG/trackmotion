@@ -1,4 +1,18 @@
 {
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "CenterFace AI",
+        "supportEmail": "studio@centerface.web.app",
+        "authorizedRedirectUris": [
+          "https://centerface.web.app",
+          "https://centerface2.firebaseapp.com",
+          "http://localhost"
+        ]
+      }
+    }
+  },
   "firestore": {
     "rules": "firestore.rules"
   },
