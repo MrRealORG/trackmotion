@@ -1,16 +1,20 @@
 import type { CSSProperties } from "react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { MEDIA } from "@/lib/media";
 import { Corners, Cover, Lock } from "@/components/site/Viewfinder";
 import { Timecode, WordReveal } from "@/components/site/Motion";
 import { NoteForm } from "@/components/site/NoteForm";
 
 export const metadata: Metadata = {
-  title: "About — how browser motion tracking works",
+  title: "About — how browser motion tracking works · RealHackers",
   description:
-    "How CenterFace AI tracks motion inside a browser tab: pyramidal Lucas–Kanade optical flow with forward–backward checks, RANSAC similarity fits, MediaPipe face mesh and a smoothing path solver — all on-device, nothing uploaded.",
+    "How CenterFace AI tracks motion inside a browser tab: pyramidal Lucas–Kanade optical flow with forward–backward checks, RANSAC similarity fits, MediaPipe face mesh and a smoothing path solver. Built by Ahmad Raza and the RealHackers studio.",
   alternates: { canonical: "/about" },
   keywords: [
+    "Ahmad Raza",
+    "RealHackers",
+    "realhackers.pages.dev",
     "how motion tracking works",
     "Lucas-Kanade optical flow in the browser",
     "RANSAC similarity transform",
@@ -19,9 +23,9 @@ export const metadata: Metadata = {
     "centerface ai",
   ],
   openGraph: {
-    title: "About CenterFace AI — a tracker that never asks for your file",
+    title: "About CenterFace AI — Built by RealHackers (Founder: Ahmad Raza)",
     description:
-      "Optical flow, robust estimation and a path solver, running entirely in your browser tab. Here's how it works.",
+      "Optical flow, robust estimation and a path solver, running entirely in your browser tab. Built with craft by RealHackers.",
     url: "/about",
   },
 };
@@ -38,6 +42,10 @@ const PIPELINE: [string, string, string][] = [
 ];
 
 const FAQ = [
+  {
+    q: "Who built CenterFace AI?",
+    a: "CenterFace AI was engineered and architected by Ahmad Raza, Founder of RealHackers (https://realhackers.pages.dev/). RealHackers is a minimal design and engineering studio building calm, fast, and high-performance digital products.",
+  },
   {
     q: "Does my video get uploaded anywhere?",
     a: "No. Decoding, analysis, compositing and encoding all run inside your browser tab. The only things that ever reach the server are the overlays and projects you explicitly choose to save to the library.",
@@ -60,14 +68,43 @@ const FAQ = [
   },
 ];
 
+const SKILLS = [
+  "AI Motion Tracking",
+  "Computer Vision & Optical Flow",
+  "MediaPipe Face Mesh",
+  "WebAssembly & WebCodecs",
+  "Full-Stack Web Engineering",
+  "Client-Side Privacy Architecture",
+];
+
 const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: FAQ.map((f) => ({
-    "@type": "Question",
-    name: f.q,
-    acceptedAnswer: { "@type": "Answer", text: f.a },
-  })),
+  "@graph": [
+    {
+      "@type": "AboutPage",
+      name: "About CenterFace AI & RealHackers Studio",
+      description: "Learn how CenterFace AI motion tracking works and meet its creator Ahmad Raza from RealHackers.",
+      publisher: {
+        "@type": "Organization",
+        name: "RealHackers",
+        url: "https://realhackers.pages.dev",
+        email: "hello@realhackers.studio",
+        founder: {
+          "@type": "Person",
+          name: "Ahmad Raza",
+          url: "https://realhackers.pages.dev",
+        },
+      },
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: FAQ.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    },
+  ],
 };
 
 export default function AboutPage() {
@@ -206,21 +243,209 @@ export default function AboutPage() {
         </div>
       </section>
 
+      {/* ────────────────────────────────────────── founder & studio ── */}
+      <section id="founder" className="scroll-mt-24 border-t border-white/10 bg-[#080809]">
+        <div className="mx-auto max-w-[1280px] px-6 py-28 sm:px-10 sm:py-36">
+          <div className="flex flex-col gap-4">
+            <p className="rv osd text-lock">04 — Studio &amp; Founder</p>
+            <h2 className="h-title text-[clamp(2.4rem,5.6vw,4.5rem)]">
+              <span className="mask-line">
+                <span>Made by</span>
+              </span>
+              <span className="mask-line" style={d(90)}>
+                <span className="text-lock">RealHackers.</span>
+              </span>
+            </h2>
+            <p className="rv max-w-2xl text-[16.5px] leading-relaxed text-white/60">
+              CenterFace AI is designed, engineered, and maintained by{" "}
+              <strong className="text-white">Ahmad Raza</strong>, Founder of{" "}
+              <a
+                href="https://realhackers.pages.dev"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-lock underline underline-offset-4 hover:brightness-125"
+              >
+                RealHackers
+              </a>{" "}
+              — a digital engineering and design studio focused on building calm, fast software with unreasonable standards.
+            </p>
+          </div>
+
+          <div className="mt-14 grid gap-8 lg:grid-cols-2">
+            {/* ── Founder Profile Card ── */}
+            <div className="rv rounded-[24px] border border-white/10 bg-[#141416] p-7 sm:p-9">
+              <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+                <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-white/15 bg-black/50 shadow-xl">
+                  <img
+                    src="https://pub-bc5ccd066c6146bf8205cf1f26838d76.r2.dev/team/1789065606779-2mhh26.webp"
+                    alt="Ahmad Raza — Founder of RealHackers"
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-lock/15 px-2.5 py-0.5 font-mono text-[10.5px] font-bold uppercase tracking-wider text-lock">
+                      Founder &amp; Architect
+                    </span>
+                    <span className="osd text-white/30">Pakistan</span>
+                  </div>
+                  <h3 className="mt-2 text-2xl font-bold text-white">Ahmad Raza</h3>
+                  <p className="text-[14px] text-white/50">Founder &amp; Lead Developer at RealHackers</p>
+                </div>
+              </div>
+
+              <p className="mt-6 text-[15px] leading-relaxed text-white/70">
+                Ahmad built CenterFace AI to eliminate the bloat, fees, and privacy leaks of traditional video editors.
+                By porting pyramidal Lucas–Kanade optical flow, MediaPipe face mesh, and WebCodecs to the browser,
+                creators can produce frame-exact face lock edits in 10 seconds on any device without uploading a single byte.
+              </p>
+
+              <div className="mt-6 flex flex-wrap gap-2">
+                {SKILLS.map((s) => (
+                  <span
+                    key={s}
+                    className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[12px] font-medium text-white/75"
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
+
+              <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-white/10 pt-6">
+                <a
+                  href="https://realhackers.pages.dev"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full bg-lock px-5 py-2.5 text-[13.5px] font-semibold text-black transition hover:scale-105 hover:bg-lock/90"
+                >
+                  Visit Portfolio
+                  <span aria-hidden="true">↗</span>
+                </a>
+                <a
+                  href="https://realhackers.pages.dev/team"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-[13.5px] font-semibold text-white transition hover:bg-white/10"
+                >
+                  Meet the Team ↗
+                </a>
+                <a
+                  href="mailto:hello@realhackers.studio"
+                  className="inline-flex items-center gap-1.5 font-mono text-[12.5px] text-white/60 hover:text-lock transition-colors ml-auto"
+                >
+                  hello@realhackers.studio
+                </a>
+              </div>
+            </div>
+
+            {/* ── RealHackers Studio Card ── */}
+            <div className="rv flex flex-col justify-between rounded-[24px] border border-lock/30 bg-gradient-to-b from-[#18181b] via-[#121214] to-[#0d0d0f] p-7 shadow-xl sm:p-9">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-lock">
+                    Design &amp; Engineering Studio
+                  </span>
+                  <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400">
+                    Active &amp; Shipping
+                  </span>
+                </div>
+
+                <h3 className="mt-4 text-3xl font-bold tracking-tight text-white">
+                  RealHackers
+                </h3>
+                <p className="mt-1 font-mono text-[13px] text-white/40">
+                  “Quiet work for loud problems.”
+                </p>
+
+                <p className="mt-5 text-[15px] leading-relaxed text-white/70">
+                  RealHackers is a technology and digital engineering studio focused on building premium websites,
+                  AI-powered tools, software products, automation systems, and innovative digital experiences.
+                  Every product is built with craft, speed, and quiet confidence.
+                </p>
+
+                <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <div className="rounded-xl border border-white/10 bg-black/40 p-3.5 text-center">
+                    <div className="text-xl font-bold text-lock">100%</div>
+                    <div className="mt-0.5 text-[11px] text-white/50 uppercase tracking-wider">Client-Side</div>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/40 p-3.5 text-center">
+                    <div className="text-xl font-bold text-white">0 KB</div>
+                    <div className="mt-0.5 text-[11px] text-white/50 uppercase tracking-wider">Data Uploaded</div>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/40 p-3.5 text-center col-span-2 sm:col-span-1">
+                    <div className="text-xl font-bold text-emerald-400">60 FPS</div>
+                    <div className="mt-0.5 text-[11px] text-white/50 uppercase tracking-wider">GPU Accelerated</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 border-t border-white/10 pt-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-xs text-white/40">Explore studio portfolio:</span>
+                  <div className="flex items-center gap-3">
+                    <a
+                      href="https://realhackers.pages.dev"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-semibold text-lock hover:underline"
+                    >
+                      realhackers.pages.dev ↗
+                    </a>
+                    <span className="text-white/20">·</span>
+                    <a
+                      href="https://realhackers.pages.dev/gallery"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-semibold text-white/70 hover:text-white hover:underline"
+                    >
+                      Gallery ↗
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ─────────────────────────────────────────────── contact ── */}
       <section id="contact" className="scroll-mt-24 border-t border-white/10">
         <div className="mx-auto grid max-w-[1280px] gap-12 px-6 py-28 sm:px-10 sm:py-36 lg:grid-cols-[1fr_1.1fr]">
           <div>
-            <p className="rv osd text-white/40">04 — Say hello</p>
+            <p className="rv osd text-white/40">05 — Say hello</p>
             <h2 className="h-title mt-5 text-[clamp(2.4rem,5vw,4.2rem)]">
               <span className="mask-line">
                 <span>Send a note.</span>
               </span>
             </h2>
             <p className="rv mt-6 max-w-md text-[15.5px] leading-relaxed text-white/55">
-              Feature requests, bug reports and clips that broke the tracker all land in the admin console. Every one
-              gets read.
+              Feature requests, bug reports, custom studio inquiries, and enterprise builds all land in the admin console
+              and reach Ahmad Raza directly.
             </p>
-            <p className="rv mt-8 font-mono text-[13px] text-white/40">studio@trackwebmotion.app</p>
+
+            <div className="rv mt-8 flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <span className="text-xs uppercase tracking-wider text-white/40">Studio Email:</span>
+                <a
+                  href="mailto:hello@realhackers.studio"
+                  className="font-mono text-[14px] font-medium text-lock hover:underline"
+                >
+                  hello@realhackers.studio
+                </a>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs uppercase tracking-wider text-white/40">Portfolio:</span>
+                <a
+                  href="https://realhackers.pages.dev"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-[14px] text-white/80 hover:text-white hover:underline"
+                >
+                  https://realhackers.pages.dev
+                </a>
+              </div>
+            </div>
           </div>
           <div className="rv">
             <NoteForm />
